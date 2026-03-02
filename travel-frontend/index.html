@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartTrip AI - Budget Travel Planner</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap" async defer></script>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+<h1>🌍 SmartTrip AI</h1>
+<p>Hackathon Edition – Intelligent Budget-Based Travel Planner</p>
+</header>
+
+<!-- tab navigation -->
+<nav class="tabs">
+    <button class="tab-button active" data-tab="tab1">Home</button>
+    <button class="tab-button" data-tab="tab2">Stays</button>
+    <button class="tab-button" data-tab="tab3">Visits</button>
+    <button class="tab-button" data-tab="tab4">Transport</button>
+    <button class="tab-button" data-tab="tab5">Mood</button>
+</nav>
+
+<!-- home tab with form and map -->
+<section id="tab1" class="tab-content active">
+    <div class="grid">
+        <div class="form-card">
+            <form id="trip-form">
+                <div class="bubble-field">
+                    <input list="places-list" type="text" id="places" placeholder="Enter Destination City" required autocomplete="off">
+                    <datalist id="places-list"></datalist>
+                </div>
+
+                <div class="bubble-field">
+                    <input type="date" id="start-date" required>
+                </div>
+
+                <div class="bubble-field">
+                    <input type="number" id="duration" placeholder="Duration (Days)" min="1" required>
+                </div>
+
+                <div class="bubble-field">
+                    <input type="number" id="budget" placeholder="Total Budget" required>
+                </div>
+
+                <div class="bubble-field">
+                    <select id="currency">
+                        <option value="USD">USD</option>
+                        <option value="INR">INR</option>
+                        <option value="EUR">EUR</option>
+                    </select>
+                </div>
+
+                <div class="bubble-field">
+                    <label>Budget Split</label>
+                    <div class="split">
+                        <input type="range" id="staySplit" min="20" max="70" value="40">
+                        <span id="stayPercent">40%</span> Stay
+                    </div>
+                </div>
+
+                <div class="bubble-field">
+                    <select id="mood">
+                        <option value="relaxed">Relaxed</option>
+                        <option value="busy">Busy</option>
+                        <option value="foodie">Foodie</option>
+                        <option value="adventure">Adventure</option>
+                        <option value="cultural">Cultural</option>
+                        <option value="aesthetic">Aesthetic</option>
+                    </select>
+                </div>
+
+                <div class="bubble-field" id="interest-container">
+                    <label style="flex-basis:100%;">Interests:</label>
+                    <label><input type="checkbox" value="nature"> Nature</label>
+                    <label><input type="checkbox" value="food"> Food</label>
+                    <label><input type="checkbox" value="history"> History</label>
+                    <label><input type="checkbox" value="architecture"> Architecture</label>
+                    <label><input type="checkbox" value="beaches"> Beaches</label>
+                    <label><input type="checkbox" value="urban"> Urban</label>
+                    <label><input type="checkbox" value="nightlife"> Nightlife</label>
+                </div>
+
+                <div class="bubble-field">
+                    <select id="companions">
+                        <option value="solo">Solo</option>
+                        <option value="friends">Friends</option>
+                        <option value="couple">Couple</option>
+                        <option value="family">Family</option>
+                    </select>
+                    <input type="number" id="companion-count" name="companionCount" min="1" placeholder="# occupants" style="display:none; width:80px; margin-left:10px;" />
+                </div>
+
+                <button type="submit">Generate Smart Plan</button>
+            </form>
+        </div>
+
+        <div class="map-card">
+            <div id="map"></div>
+        </div>
+    </div>
+</section>
+
+<!-- other tabs just show outputs -->
+<section id="tab2" class="tab-content">
+    <div class="result-card">
+        <h2>🏨 Stays</h2>
+        <div id="stays-output"></div>
+    </div>
+</section>
+
+<section id="tab3" class="tab-content">
+    <div class="result-card">
+        <h2>📍 Attractions</h2>
+        <div id="visits-output"></div>
+    </div>
+</section>
+
+<section id="tab4" class="tab-content">
+    <div class="result-card">
+        <h2>🚗 Transport</h2>
+        <div id="transport-output"></div>
+    </div>
+</section>
+
+<section id="tab5" class="tab-content">
+    <div class="result-card">
+        <h2>🙂 Mood</h2>
+        <div id="mood-output"></div>
+    </div>
+</section>
+
+<pre id="output" style="display:none;"></pre>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
