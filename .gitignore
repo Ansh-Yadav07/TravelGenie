@@ -24,7 +24,7 @@ dist-ssr
 *.sw?
 
 # Python and AI model files
-TravelGenieAI/
+# TravelGenieAI/  # Commented out to allow deployment
 __pycache__/
 *.py[cod]
 *$py.class

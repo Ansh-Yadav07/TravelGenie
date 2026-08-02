@@ -36,7 +36,7 @@ const Hero = () => {
         transport: formData.transport,
       });
 
-      const response = await fetch(`http://localhost:8000/plan_trip?${params.toString()}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/plan_trip?${params.toString()}`);
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}: ${response.statusText}`);

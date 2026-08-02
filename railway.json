@@ -1,0 +1,23 @@
+{
+  "services": [
+    {
+      "name": "frontend",
+      "path": ".",
+      "type": "node",
+      "startCommand": "npm run build && npm run preview -- --port $PORT",
+      "env": {
+        "VITE_API_URL": "$RAILWAY_PRIVATE_DOMAIN"
+      }
+    },
+    {
+      "name": "backend",
+      "path": "./TravelGenieAI",
+      "type": "python",
+      "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
+      "env": {
+        "MODEL_PATH": "models/recommender.pkl",
+        "DATA_PATH": "data/user_data.csv"
+      }
+    }
+  ]
+}

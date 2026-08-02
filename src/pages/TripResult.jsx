@@ -31,7 +31,7 @@ const TripResult = () => {
                 transport: query.transport || 'Flight',
             });
 
-            const response = await fetch(`http://localhost:8000/plan_trip?${params.toString()}`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/plan_trip?${params.toString()}`);
             if (!response.ok) {
                 throw new Error('Failed to update itinerary');
             }
