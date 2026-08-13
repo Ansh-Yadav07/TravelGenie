@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../assets/logo.png';
+
+const navLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/explore', label: 'Explore' },
+  { href: '/#ai-planner', label: 'AI Planner' },
+  { to: '/stays', label: 'Stays' },
+  { to: '/about', label: 'About' },
+];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,57 +18,122 @@ const Navbar = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-md py-4' : 'bg-white/10 backdrop-blur-sm py-6 border-b border-white/10'}`}>
+    <nav
+      id="main-nav"
+      className={`fixed w-full z-50 transition-all duration-500 ${
+        isScrolled
+          ? 'bg-slate-950/80 backdrop-blur-2xl shadow-lg shadow-black/20 py-3 border-b border-white/5'
+          : 'bg-transparent py-5'
+      }`}
+    >
       <div className="container mx-auto px-6 flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          <img src={logo} alt="TravelGenie Logo" className="w-10 h-10 object-contain rounded-full" />
-          <span className="text-gray-800">TravelGenie</span>
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-3 group" id="nav-logo">
+          <div className="relative">
+            <img src={logo} alt="TravelGenie Logo" className="w-10 h-10 object-contain rounded-full ring-2 ring-blue-500/30 group-hover:ring-blue-400/60 transition-all" />
+            <div className="absolute -inset-1 bg-blue-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <span className="text-xl font-bold text-gradient" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            TravelGenie
+          </span>
         </Link>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-8">
-          <Link to="/" className={`font-bold transition-colors ${location.pathname === '/' ? 'text-blue-600' : 'text-black-700 hover:text-blue-600'}`}>Home</Link>
-          <Link to="/explore" className={`font-bold transition-colors ${location.pathname === '/explore' ? 'text-blue-600' : 'text-black-700 hover:text-blue-600'}`}>Explore</Link>
-          <a href="/#ai-planner" className="font-bold text-black-700 hover:text-blue-600 transition-colors">AI Planner</a>
-          <Link to="/stays" className={`font-bold transition-colors ${location.pathname === '/stays' ? 'text-blue-600' : 'text-black-700 hover:text-blue-600'}`}>Stays</Link>
-          <Link to="/about" className={`font-bold transition-colors ${location.pathname === '/about' ? 'text-blue-600' : 'text-black-700 hover:text-blue-600'}`}>About Us</Link>
-          <button className="bg-green-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300">
+        <div className="hidden md:flex items-center gap-1">
+          {navLinks.map((link) => {
+            const isActive = link.to && location.pathname === link.to;
+            const Component = link.to ? Link : 'a';
+            const props = link.to ? { to: link.to } : { href: link.href };
+
+            return (
+              <Component
+                key={link.label}
+                {...props}
+                id={`nav-${link.label.toLowerCase().replace(/\s/g, '-')}`}
+                className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  isActive
+                    ? 'text-blue-400 bg-blue-500/10'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {link.label}
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full"
+                  />
+                )}
+              </Component>
+            );
+          })}
+
+          <button
+            id="nav-signin"
+            className="ml-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center gap-2"
+          >
+            <Sparkles size={14} />
             Sign In
           </button>
         </div>
 
         {/* Mobile Menu Button */}
-        <button className="md:hidden text-gray-700" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        <button
+          id="nav-mobile-toggle"
+          className="md:hidden text-gray-300 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-md absolute top-full left-0 w-full shadow-lg py-4 px-6 flex flex-col space-y-4 animate-fade-in-down">
-          <Link to="/" className="font-medium text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>Home</Link>
-          <Link to="/explore" className="font-medium text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>Explore</Link>
-          <a href="/#ai-planner" className="font-medium text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>AI Planner</a>
-          <Link to="/stays" className="font-medium text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>Stays</Link>
-          <Link to="/about" className="font-medium text-gray-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>About Us</Link>
-          <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-medium w-full">
-            Sign In
-          </button>
-        </div>
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-slate-900/95 backdrop-blur-2xl border-t border-white/5 overflow-hidden"
+          >
+            <div className="container mx-auto px-6 py-6 flex flex-col gap-2">
+              {navLinks.map((link) => {
+                const isActive = link.to && location.pathname === link.to;
+                const Component = link.to ? Link : 'a';
+                const props = link.to ? { to: link.to } : { href: link.href };
+
+                return (
+                  <Component
+                    key={link.label}
+                    {...props}
+                    onClick={() => setIsOpen(false)}
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive
+                        ? 'text-blue-400 bg-blue-500/10'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {link.label}
+                  </Component>
+                );
+              })}
+              <button className="mt-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-white text-sm font-semibold w-full flex items-center justify-center gap-2">
+                <Sparkles size={14} />
+                Sign In
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

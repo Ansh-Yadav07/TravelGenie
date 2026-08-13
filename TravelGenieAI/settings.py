@@ -1,4 +1,7 @@
-# Configuration settings
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OVERPASS_URL = "http://overpass-api.de/api/interpreter"
-MODEL_PATH = "models/recommender.pkl"
-DATA_PATH = "data/user_data.csv"

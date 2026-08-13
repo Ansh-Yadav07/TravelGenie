@@ -1,9 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from models.recommender import recommend_trip
 import uvicorn
 
-app = FastAPI()
+app = FastAPI(
+    title="TravelGenie AI",
+    description="AI-powered trip planning API using Gemini",
+    version="2.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,43 +17,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def home():
-    return {"message": "Welcome to TravelGenie! Train with /train and plan trips with /plan_trip."}
+    return {
+        "message": "Welcome to TravelGenie AI! Plan trips with /plan_trip.",
+        "version": "2.0.0",
+        "engine": "Gemini 2.0 Flash",
+    }
 
-@app.get("/train")
-def train():
-    # Mock training for now or call real train_model if dependencies work
-    return {"status": "Model trained successfully"}
 
 @app.get("/plan_trip")
 def plan_trip(
     location: str,
     duration: int,
-    budget: str,
-    mood: str,
+    budget: str = "Moderate",
+    mood: str = "Relaxing",
     plan_mode: str = "Day-wise",
     companions: str = "Solo",
     pace: str = "Moderate",
     transport: str = "Flight",
 ):
-    preferences = []
-    
-    # We pass dummy location dict as recommender doesn't need real lat/lon for the mock matrix data anymore
-    loc_data = {"name": location, "lat": 0, "lon": 0} 
-    
+    """Generate an AI-powered trip plan using Gemini."""
+    if not location or not location.strip():
+        raise HTTPException(status_code=400, detail="Location is required")
+    if duration < 1:
+        raise HTTPException(status_code=400, detail="Duration must be at least 1")
+
+    loc_data = {"name": location.strip(), "lat": 0, "lon": 0}
+
     result = recommend_trip(
         location=loc_data,
         duration=duration,
         budget_str=budget,
         mood=mood,
-        preferences=preferences,
+        preferences=[],
         companions=companions,
         transport_mode=transport,
         plan_mode=plan_mode,
         pace=pace,
     )
     return result
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

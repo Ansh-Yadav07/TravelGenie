@@ -1,39 +1,151 @@
-# trip_planner_ai/models/recommender.py
+"""
+Gemini-powered trip recommender for TravelGenie.
+Sends structured prompts to Gemini 2.0 Flash and parses JSON responses
+into the exact matrix schema the frontend expects.
+"""
 
-import random
+import json
+import re
 import math
+import random
+from google import genai
+from settings import GEMINI_API_KEY
 
-import joblib
+# Initialize the Gemini client
+client = genai.Client(api_key=GEMINI_API_KEY)
+MODEL_ID = "gemini-2.0-flash"
 
-from settings import MODEL_PATH
 
 def _get_budget_total(budget_str):
+    """Map budget label to approximate INR total."""
     budget_map = {
         "Budget Friendly": 15000,
         "Moderate": 40000,
         "Luxury": 100000,
-        "Ultra Luxury": 300000
+        "Ultra Luxury": 300000,
     }
     return budget_map.get(budget_str, 30000)
 
 
-def _build_scene(mood):
-    scene_types = {
-        "Relaxing": {"category": "Chill", "icon": "Sun"},
-        "Adventure": {"category": "Active", "icon": "Mountain"},
-        "Party": {"category": "Party", "icon": "Music"},
-        "Cultural": {"category": "History", "icon": "Landmark"},
-        "Romantic": {"category": "Romance", "icon": "Sun"},
-    }
-    return scene_types.get(mood, {"category": "Balanced", "icon": "Map"})
+def _build_gemini_prompt(location_name, duration, budget_str, mood, companions, transport_mode, plan_mode, pace):
+    """Build the structured prompt for Gemini."""
+    total_budget = _get_budget_total(budget_str)
+    duration_unit = "hours" if plan_mode == "Hour-wise" else "days"
+
+    return f"""You are an expert travel planner AI. Create a detailed, realistic trip plan for the following request.
+
+TRIP DETAILS:
+- Destination: {location_name}
+- Duration: {duration} {duration_unit}
+- Total Budget: ₹{total_budget:,} INR ({budget_str})
+- Mood/Vibe: {mood}
+- Travel Companions: {companions}
+- Preferred Transport: {transport_mode}
+- Planning Mode: {plan_mode}
+- Pace: {pace}
+
+BUDGET SPLIT (approximate):
+- Stays: 40% = ₹{int(total_budget * 0.4):,}
+- Transport: 20% = ₹{int(total_budget * 0.2):,}
+- Activities: 40% = ₹{int(total_budget * 0.4):,}
+
+INSTRUCTIONS:
+1. Generate 3 REAL stay/hotel options that actually exist or are realistic for {location_name}. Include actual hotel names, types (Resort/Hotel/Homestay/Hostel), and a relevant amenity. Calculate total_cost based on the duration.
+2. Generate transport options for 5 modes (Flight, Train, Bus, Car Rental, Taxi) with realistic cost estimates for traveling to/within {location_name}.
+3. Create a {"hour-by-hour" if plan_mode == "Hour-wise" else "day-by-day"} itinerary with REAL places, attractions, restaurants, and experiences specific to {location_name}. Each activity needs a realistic cost in INR.
+4. Activities should match the {mood} mood and {pace} pace.
+5. For {companions} travelers, suggest appropriate activities.
+6. All costs must be realistic for {location_name} in India (use INR).
+
+You MUST respond with ONLY valid JSON in this exact structure (no markdown, no explanation):
+{{
+  "stays": [
+    {{
+      "name": "Hotel Name",
+      "type": "Resort|Hotel|Homestay|Hostel",
+      "amenity": "Key Feature",
+      "total_cost": 5000
+    }},
+    {{
+      "name": "Hotel Name 2",
+      "type": "Hotel",
+      "amenity": "Key Feature",
+      "total_cost": 3500
+    }},
+    {{
+      "name": "Hotel Name 3",
+      "type": "Homestay",
+      "amenity": "Key Feature",
+      "total_cost": 2000
+    }}
+  ],
+  "transport": [
+    {{
+      "mode": "Flight",
+      "estimated_total": 5000
+    }},
+    {{
+      "mode": "Train",
+      "estimated_total": 2000
+    }},
+    {{
+      "mode": "Bus",
+      "estimated_total": 1200
+    }},
+    {{
+      "mode": "Car Rental",
+      "estimated_total": 3500
+    }},
+    {{
+      "mode": "Taxi",
+      "estimated_total": 4000
+    }}
+  ],
+  "scene": {{
+    "category": "Chill|Active|Party|History|Romance|Balanced",
+    "visual_cue": "Sun|Mountain|Music|Landmark|Map"
+  }},
+  "itinerary_segments": [
+    {{
+      "segment_label": "Day 1",
+      "focus": "Describe the day's theme",
+      "activities": [
+        {{
+          "time": "09:00",
+          "activity": "Activity Name",
+          "details": "Brief description of the activity at specific place in {location_name}",
+          "location_zone": "Area/Neighborhood name",
+          "cost": 500,
+          "duration_minutes": 90
+        }}
+      ]
+    }}
+  ],
+  "total_activity_spend": 5000
+}}
+
+IMPORTANT: Return ONLY the JSON object. No backticks, no markdown formatting, no explanation text.
+"""
+
+
+def _parse_gemini_response(response_text):
+    """Parse Gemini's response, handling potential markdown formatting."""
+    text = response_text.strip()
+
+    # Remove markdown code fences if present
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*\n?", "", text)
+        text = re.sub(r"\n?```\s*$", "", text)
+
+    return json.loads(text)
 
 
 def _density_from_pace_and_mood(mood, pace):
+    """Determine activity density from pace and mood."""
     if pace == "Chill":
         return "Relaxed"
     if pace == "Fast Paced":
         return "Packed"
-
     density_map = {
         "Relaxing": "Relaxed",
         "Adventure": "Packed",
@@ -44,289 +156,183 @@ def _density_from_pace_and_mood(mood, pace):
     return density_map.get(mood, "Moderate")
 
 
-def _format_time(hour_float):
-    hour = int(hour_float) % 24
-    minutes = int(round((hour_float - int(hour_float)) * 60))
-    return f"{hour:02d}:{minutes:02d}"
-
-
-def _mood_activity_templates():
-    return {
-        "Relaxing": [
-            ("Sunrise walk", "Scenic boardwalk", 0),
-            ("Brunch", "Slow cafe experience", 450),
-            ("Spa break", "Ayurvedic wellness session", 1600),
-            ("Sunset point", "Golden-hour photos", 200),
-            ("Beach dinner", "Seafood and live acoustic music", 1200),
-        ],
-        "Adventure": [
-            ("Trail hike", "Guided trek to viewpoint", 900),
-            ("Zipline session", "Short high-adrenaline run", 1500),
-            ("ATV trail", "Off-road terrain loop", 1800),
-            ("Street-food stop", "Energy refill", 350),
-            ("Night market", "Late walk and local shopping", 600),
-        ],
-        "Party": [
-            ("Cafe brunch", "Late morning recovery meal", 500),
-            ("Pool hangout", "DJ lounge and mocktails", 1400),
-            ("Sunset pre-party", "Rooftop set", 1000),
-            ("Club entry", "Prime-time music venue", 2200),
-            ("Post-midnight snacks", "24x7 diner stop", 400),
-        ],
-        "Cultural": [
-            ("Heritage walk", "Guided old-town route", 500),
-            ("Museum tour", "Local history gallery", 350),
-            ("Craft workshop", "Traditional art session", 800),
-            ("Local thali", "Regional cuisine lunch", 450),
-            ("Evening performance", "Classical music or folk dance", 950),
-        ],
-        "Romantic": [
-            ("Garden stroll", "Quiet morning in botanical park", 100),
-            ("Couple brunch", "Riverside cafe", 900),
-            ("Boat ride", "Private sunset cruise", 1800),
-            ("Photo session", "Scenic couple spots", 700),
-            ("Candlelight dinner", "Curated chef menu", 2500),
-        ],
-    }
-
-
-def _build_stays(stay_budget, nights, plan_mode):
-    if plan_mode == "Hour-wise" and nights == 0:
-        options = [
-            {"name": "Airport Lounge Pod", "type": "Transit Lounge", "amenity": "Shower + Nap Pod", "cost": 1800, "score": 8.2},
-            {"name": "City Day Room", "type": "Day Use Hotel", "amenity": "Flexible check-in", "cost": 2600, "score": 8.7},
-            {"name": "Co-working Lounge", "type": "Hybrid Rest Space", "amenity": "Lockers + Wi-Fi", "cost": 1200, "score": 7.9},
-        ]
-        stays_result = []
-        for option in options:
-            stays_result.append({
-                "name": option["name"],
-                "type": option["type"],
-                "amenity": option["amenity"],
-                "total_cost": option["cost"],
-                "is_over_budget": option["cost"] > stay_budget,
-                "visual_cue": "red_shadow" if option["cost"] > stay_budget else "none",
-            })
-        return stays_result
-
-    avg_night_cost = max(stay_budget / max(nights, 1), 1500)
-    stay_options = [
-        {"name": "Seaside Resort", "type": "Resort", "amenity": "Beach View", "cost_per_night": avg_night_cost * 1.15, "score": 9.2},
-        {"name": "City Center Hotel", "type": "Hotel", "amenity": "Central Location", "cost_per_night": avg_night_cost * 0.95, "score": 8.6},
-        {"name": "Cozy Homestay", "type": "Homestay", "amenity": "Local Host Experience", "cost_per_night": avg_night_cost * 0.7, "score": 8.9},
-    ]
-
-    stays_result = []
-    for stay in stay_options:
-        total_cost = stay["cost_per_night"] * max(nights, 1)
-        is_over_budget = total_cost > stay_budget
-        stays_result.append({
-            "name": stay["name"],
-            "type": stay["type"],
-            "amenity": stay["amenity"],
-            "total_cost": int(total_cost),
-            "is_over_budget": is_over_budget,
-            "visual_cue": "red_shadow" if is_over_budget else "none"
-        })
-    return stays_result
-
-
-def _build_transport(transport_budget, duration_days, selected_transport):
-    base_costs = {
-        "Flight": 3200,
-        "Train": 1400,
-        "Bus": 900,
-        "Car Rental": 2200,
-        "Taxi": 1800,
-    }
-    options = ["Flight", "Train", "Bus", "Car Rental", "Taxi"]
-    transport_result = []
-
-    for mode in options:
-        multiplier = 1.0 if mode == selected_transport else 1.12
-        estimated_total = int(base_costs.get(mode, 1600) * max(duration_days, 1) * multiplier)
-        is_over_budget = estimated_total > transport_budget
-        transport_result.append({
-            "mode": mode,
-            "estimated_total": estimated_total,
-            "is_over_budget": is_over_budget,
-            "visual_cue": "red_shadow" if is_over_budget else "none"
-        })
-
-    transport_result.sort(key=lambda item: item["estimated_total"])
-    return transport_result
-
-
-def _build_daywise_itinerary(days, mood, density, activity_budget, location_name):
-    templates = _mood_activity_templates().get(mood, _mood_activity_templates()["Relaxing"])
-    slots_by_density = {
-        "Relaxed": [8.0, 11.0, 15.5, 19.0],
-        "Moderate": [8.0, 10.5, 13.0, 16.0, 19.5],
-        "Packed": [7.0, 9.0, 11.0, 13.0, 16.0, 18.5, 21.0],
-    }
-    slots = slots_by_density.get(density, slots_by_density["Moderate"])
-
-    segments = []
-    total_spend = 0
-    budget_per_day = activity_budget / max(days, 1)
-
-    for day in range(1, days + 1):
-        daily_items = []
-        rolling_template = templates[day % len(templates):] + templates[:day % len(templates)]
-
-        for index, time_val in enumerate(slots):
-            activity_name, detail, base_cost = rolling_template[index % len(rolling_template)]
-            adjusted_cost = int(base_cost * (0.85 + (index * 0.05)))
-            total_spend += adjusted_cost
-            daily_items.append({
-                "time": _format_time(time_val),
-                "activity": activity_name,
-                "details": f"{detail} in {location_name}",
-                "location_zone": f"Zone {((day + index) % 4) + 1}",
-                "cost": adjusted_cost,
-                "duration_minutes": 90 if index % 2 == 0 else 120,
-            })
-
-        segments.append({
-            "segment_label": f"Day {day}",
-            "focus": "Balanced day flow" if density == "Moderate" else ("Easy pace with breaks" if density == "Relaxed" else "High-energy route"),
-            "daily_budget_target": int(budget_per_day),
-            "activities": daily_items,
-        })
-
-    return segments, total_spend
-
-
-def _build_hourwise_itinerary(hours, mood, density, activity_budget, location_name):
-    templates = _mood_activity_templates().get(mood, _mood_activity_templates()["Relaxing"])
-    step_map = {
-        "Relaxed": 3,
-        "Moderate": 2,
-        "Packed": 1.5,
-    }
-    hour_step = step_map.get(density, 2)
-
-    activities = []
-    total_spend = 0
-    current_hour = 8.0
-    blocks = max(1, int(math.ceil(hours / hour_step)))
-
-    for block in range(blocks):
-        activity_name, detail, base_cost = templates[block % len(templates)]
-        adjusted_cost = int(base_cost * (0.9 + (block % 3) * 0.08))
-        total_spend += adjusted_cost
-        end_hour = current_hour + hour_step
-
-        activities.append({
-            "time": f"{_format_time(current_hour)} - {_format_time(end_hour)}",
-            "activity": activity_name,
-            "details": f"{detail} around {location_name}",
-            "location_zone": f"Sector {((block % 5) + 1)}",
-            "cost": adjusted_cost,
-            "duration_minutes": int(hour_step * 60),
-        })
-        current_hour = end_hour
-
-    return [
-        {
-            "segment_label": f"Hour-wise Plan ({hours}h)",
-            "focus": "Flexible micro-itinerary",
-            "daily_budget_target": int(activity_budget),
-            "activities": activities,
-        }
-    ], total_spend
-
-
 def recommend_trip(location, duration, budget_str, mood, preferences, companions, transport_mode, plan_mode="Day-wise", pace="Moderate"):
-    try:
-        joblib.load(MODEL_PATH)
-    except Exception:
-        pass
-
-    random.seed(42)
-
+    """
+    Generate a trip plan using Gemini AI.
+    Falls back to a basic template if the API call fails.
+    Returns the same matrix schema the frontend expects.
+    """
+    location_name = location.get("name", "your destination") if isinstance(location, dict) else str(location)
     total_budget = _get_budget_total(budget_str)
-    location_name = location.get("name", "your destination")
-    planning_mode = plan_mode if plan_mode in ["Day-wise", "Hour-wise"] else "Day-wise"
     activity_density = _density_from_pace_and_mood(mood, pace)
 
-    if planning_mode == "Hour-wise":
+    # Calculate time-based values
+    if plan_mode == "Hour-wise":
         total_hours = max(1, int(duration))
-        equivalent_days = max(total_hours / 24, 0.5)
         nights = max(0, math.ceil(total_hours / 24) - 1)
     else:
         total_hours = max(1, int(duration)) * 24
-        equivalent_days = max(1, int(duration))
         nights = max(1, int(duration) - 1)
 
-    stay_budget = total_budget * (0.35 if planning_mode == "Hour-wise" else 0.4)
-    transport_budget = total_budget * 0.2
+    # Budget allocation
+    stay_budget = int(total_budget * 0.4)
+    transport_budget = int(total_budget * 0.2)
     activity_budget = total_budget - stay_budget - transport_budget
 
-    stays_result = _build_stays(stay_budget=stay_budget, nights=nights, plan_mode=planning_mode)
-    transport_result = _build_transport(
-        transport_budget=transport_budget,
-        duration_days=equivalent_days,
-        selected_transport=transport_mode,
-    )
+    # Duration label
+    duration_label = f"{int(duration)} hours" if plan_mode == "Hour-wise" else f"{int(duration)} days"
 
-    if planning_mode == "Hour-wise":
-        itinerary_segments, itinerary_spend = _build_hourwise_itinerary(
-            hours=max(1, int(duration)),
-            mood=mood,
-            density=activity_density,
-            activity_budget=activity_budget,
+    try:
+        # Call Gemini API
+        prompt = _build_gemini_prompt(
             location_name=location_name,
-        )
-        duration_label = f"{int(duration)} hours"
-    else:
-        itinerary_segments, itinerary_spend = _build_daywise_itinerary(
-            days=max(1, int(duration)),
+            duration=duration,
+            budget_str=budget_str,
             mood=mood,
-            density=activity_density,
-            activity_budget=activity_budget,
-            location_name=location_name,
+            companions=companions,
+            transport_mode=transport_mode,
+            plan_mode=plan_mode,
+            pace=pace,
         )
-        duration_label = f"{int(duration)} days"
 
-    current_scene = _build_scene(mood)
-    activity_budget_remaining = max(0, int(activity_budget - itinerary_spend))
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=prompt,
+        )
+
+        data = _parse_gemini_response(response.text)
+
+        # Build stays with budget flags
+        stays_options = []
+        for stay in data.get("stays", []):
+            total_cost = int(stay.get("total_cost", 0))
+            is_over = total_cost > stay_budget
+            stays_options.append({
+                "name": stay.get("name", "Unknown Stay"),
+                "type": stay.get("type", "Hotel"),
+                "amenity": stay.get("amenity", "Standard"),
+                "total_cost": total_cost,
+                "is_over_budget": is_over,
+                "visual_cue": "red_shadow" if is_over else "none",
+            })
+
+        # Build transport with budget flags
+        transport_options = []
+        for t in data.get("transport", []):
+            est = int(t.get("estimated_total", 0))
+            is_over = est > transport_budget
+            transport_options.append({
+                "mode": t.get("mode", "Unknown"),
+                "estimated_total": est,
+                "is_over_budget": is_over,
+                "visual_cue": "red_shadow" if is_over else "none",
+            })
+        transport_options.sort(key=lambda x: x["estimated_total"])
+
+        # Build itinerary
+        itinerary_segments = data.get("itinerary_segments", [])
+        total_activity_spend = int(data.get("total_activity_spend", 0))
+        activity_budget_remaining = max(0, activity_budget - total_activity_spend)
+
+        # Scene
+        scene = data.get("scene", {})
+
+        return {
+            "matrix": {
+                "stays": {
+                    "budget_allocated": stay_budget,
+                    "options": stays_options,
+                    "primary_filter": "Total Budget",
+                    "secondary_filter": "Comfort + commute",
+                },
+                "places_to_visit": {
+                    "budget_allocated": activity_budget,
+                    "remaining_budget": activity_budget_remaining,
+                    "mood": mood,
+                    "primary_filter": "Selected Mood",
+                    "secondary_filter": "Remaining Budget",
+                    "pace": pace,
+                    "companions": companions,
+                },
+                "transport": {
+                    "budget_allocated": transport_budget,
+                    "options": transport_options,
+                    "primary_filter": "Locations",
+                    "secondary_filter": "Distance & Availability",
+                },
+                "the_scene": {
+                    "mood": mood,
+                    "category": scene.get("category", "Balanced"),
+                    "visual_cue": scene.get("visual_cue", "Map"),
+                },
+                "itinerary": {
+                    "duration": int(duration),
+                    "duration_label": duration_label,
+                    "planning_mode": plan_mode,
+                    "density": activity_density,
+                    "segments": itinerary_segments,
+                    "visual_cue": "Timeline/Calendar View",
+                },
+            }
+        }
+
+    except Exception as e:
+        print(f"[TravelGenie] Gemini API error: {e}")
+        # Fallback: return a minimal but valid response so the frontend doesn't crash
+        return _fallback_response(
+            location_name=location_name,
+            duration=int(duration),
+            budget_str=budget_str,
+            mood=mood,
+            plan_mode=plan_mode,
+            pace=pace,
+            companions=companions,
+            stay_budget=stay_budget,
+            transport_budget=transport_budget,
+            activity_budget=activity_budget,
+            activity_density=activity_density,
+            duration_label=duration_label,
+        )
+
+
+def _fallback_response(location_name, duration, budget_str, mood, plan_mode, pace, companions, stay_budget, transport_budget, activity_budget, activity_density, duration_label):
+    """Minimal fallback when Gemini is unavailable."""
+    random.seed(42)
+
+    stays_options = [
+        {"name": f"Premium Hotel in {location_name}", "type": "Hotel", "amenity": "Central Location", "total_cost": int(stay_budget * 0.9), "is_over_budget": False, "visual_cue": "none"},
+        {"name": f"Budget Stay in {location_name}", "type": "Homestay", "amenity": "Local Experience", "total_cost": int(stay_budget * 0.5), "is_over_budget": False, "visual_cue": "none"},
+        {"name": f"Luxury Resort in {location_name}", "type": "Resort", "amenity": "Pool & Spa", "total_cost": int(stay_budget * 1.3), "is_over_budget": True, "visual_cue": "red_shadow"},
+    ]
+
+    transport_options = [
+        {"mode": "Bus", "estimated_total": int(transport_budget * 0.4), "is_over_budget": False, "visual_cue": "none"},
+        {"mode": "Train", "estimated_total": int(transport_budget * 0.6), "is_over_budget": False, "visual_cue": "none"},
+        {"mode": "Taxi", "estimated_total": int(transport_budget * 0.8), "is_over_budget": False, "visual_cue": "none"},
+        {"mode": "Car Rental", "estimated_total": int(transport_budget * 1.0), "is_over_budget": False, "visual_cue": "none"},
+        {"mode": "Flight", "estimated_total": int(transport_budget * 1.4), "is_over_budget": True, "visual_cue": "red_shadow"},
+    ]
+
+    days = max(1, duration) if plan_mode == "Day-wise" else 1
+    segments = []
+    for d in range(1, days + 1):
+        segments.append({
+            "segment_label": f"Day {d}" if plan_mode == "Day-wise" else f"Hour-wise Plan ({duration}h)",
+            "focus": f"Explore {location_name} at a {pace.lower()} pace",
+            "activities": [
+                {"time": "09:00", "activity": f"Morning exploration", "details": f"Visit popular spots in {location_name}", "location_zone": "City Center", "cost": int(activity_budget * 0.1 / days), "duration_minutes": 120},
+                {"time": "12:00", "activity": f"Local cuisine", "details": f"Try authentic food in {location_name}", "location_zone": "Food District", "cost": int(activity_budget * 0.08 / days), "duration_minutes": 90},
+                {"time": "15:00", "activity": f"Afternoon activity", "details": f"{mood} experience in {location_name}", "location_zone": "Activity Zone", "cost": int(activity_budget * 0.12 / days), "duration_minutes": 120},
+                {"time": "19:00", "activity": f"Evening experience", "details": f"Wind down in {location_name}", "location_zone": "Entertainment Area", "cost": int(activity_budget * 0.1 / days), "duration_minutes": 120},
+            ],
+        })
 
     return {
         "matrix": {
-            "stays": {
-                "budget_allocated": int(stay_budget),
-                "options": stays_result,
-                "primary_filter": "Total Budget",
-                "secondary_filter": "Comfort + commute"
-            },
-            "places_to_visit": {
-                "budget_allocated": int(activity_budget),
-                "remaining_budget": activity_budget_remaining,
-                "mood": mood,
-                "primary_filter": "Selected Mood",
-                "secondary_filter": "Remaining Budget",
-                "pace": pace,
-                "companions": companions,
-            },
-            "transport": {
-                "budget_allocated": int(transport_budget),
-                "options": transport_result,
-                "primary_filter": "Locations",
-                "secondary_filter": "Distance & Availability"
-            },
-            "the_scene": {
-                "mood": mood,
-                "category": current_scene["category"],
-                "visual_cue": current_scene["icon"]
-            },
-            "itinerary": {
-                "duration": int(duration),
-                "duration_label": duration_label,
-                "planning_mode": planning_mode,
-                "density": activity_density,
-                "segments": itinerary_segments,
-                "visual_cue": "Timeline/Calendar View"
-            }
+            "stays": {"budget_allocated": stay_budget, "options": stays_options, "primary_filter": "Total Budget", "secondary_filter": "Comfort + commute"},
+            "places_to_visit": {"budget_allocated": activity_budget, "remaining_budget": int(activity_budget * 0.3), "mood": mood, "primary_filter": "Selected Mood", "secondary_filter": "Remaining Budget", "pace": pace, "companions": companions},
+            "transport": {"budget_allocated": transport_budget, "options": transport_options, "primary_filter": "Locations", "secondary_filter": "Distance & Availability"},
+            "the_scene": {"mood": mood, "category": "Balanced", "visual_cue": "Map"},
+            "itinerary": {"duration": duration, "duration_label": duration_label, "planning_mode": plan_mode, "density": activity_density, "segments": segments, "visual_cue": "Timeline/Calendar View"},
         }
     }
