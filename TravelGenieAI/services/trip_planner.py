@@ -1,6 +1,6 @@
 """
 Gemini-powered trip recommender for TravelGenie.
-Sends structured prompts to Gemini 2.0 Flash and parses JSON responses
+Sends structured prompts to Gemini 1.5 Flash and parses JSON responses
 into the exact matrix schema the frontend expects.
 """
 
@@ -13,7 +13,7 @@ from settings import GEMINI_API_KEY
 
 # Initialize the Gemini client
 client = genai.Client(api_key=GEMINI_API_KEY)
-MODEL_ID = "gemini-2.0-flash"
+MODEL_ID = "gemini-1.5-flash"
 
 
 def _get_budget_total(budget_str):
@@ -32,7 +32,7 @@ def _build_gemini_prompt(location_name, duration, budget_str, mood, companions, 
     total_budget = _get_budget_total(budget_str)
     duration_unit = "hours" if plan_mode == "Hour-wise" else "days"
 
-    return f"""You are an expert travel planner AI. Create a detailed, realistic trip plan for the following request.
+    return f"""You are an expert travel planner AI for India. Create a highly specific, realistic trip plan.
 
 TRIP DETAILS:
 - Destination: {location_name}
@@ -49,31 +49,30 @@ BUDGET SPLIT (approximate):
 - Transport: 20% = ₹{int(total_budget * 0.2):,}
 - Activities: 40% = ₹{int(total_budget * 0.4):,}
 
-INSTRUCTIONS:
-1. Generate 3 REAL stay/hotel options that actually exist or are realistic for {location_name}. Include actual hotel names, types (Resort/Hotel/Homestay/Hostel), and a relevant amenity. Calculate total_cost based on the duration.
+INSTRUCTIONS - BE VERY SPECIFIC:
+1. Generate 3 REAL, EXISTING stay/hotel options that actually exist in {location_name}. NO generic names like "Budget Stay". Use exact names (e.g., "Taj Lake Palace", "Zostel Udaipur"). Include the type (Resort/Hotel/Homestay/Hostel) and a relevant amenity. Calculate total_cost based on the duration.
 2. Generate transport options for 5 modes (Flight, Train, Bus, Car Rental, Taxi) with realistic cost estimates for traveling to/within {location_name}.
-3. Create a {"hour-by-hour" if plan_mode == "Hour-wise" else "day-by-day"} itinerary with REAL places, attractions, restaurants, and experiences specific to {location_name}. Each activity needs a realistic cost in INR.
+3. Create a {"hour-by-hour" if plan_mode == "Hour-wise" else "day-by-day"} itinerary with REAL places, specific attractions, named restaurants, and actual experiences specific to {location_name}. DO NOT use generic terms like "Morning exploration" or "Local cuisine". Give the EXACT name of the cafe, restaurant, or temple (e.g., "Cafe Mondegar", "City Palace"). Each activity needs a realistic cost in INR.
 4. Activities should match the {mood} mood and {pace} pace.
-5. For {companions} travelers, suggest appropriate activities.
-6. All costs must be realistic for {location_name} in India (use INR).
+5. All costs must be realistic for {location_name} in India (use INR).
 
 You MUST respond with ONLY valid JSON in this exact structure (no markdown, no explanation):
 {{
   "stays": [
     {{
-      "name": "Hotel Name",
+      "name": "Exact Real Hotel Name",
       "type": "Resort|Hotel|Homestay|Hostel",
       "amenity": "Key Feature",
       "total_cost": 5000
     }},
     {{
-      "name": "Hotel Name 2",
+      "name": "Exact Real Hotel Name 2",
       "type": "Hotel",
       "amenity": "Key Feature",
       "total_cost": 3500
     }},
     {{
-      "name": "Hotel Name 3",
+      "name": "Exact Real Hotel Name 3",
       "type": "Homestay",
       "amenity": "Key Feature",
       "total_cost": 2000
@@ -112,9 +111,9 @@ You MUST respond with ONLY valid JSON in this exact structure (no markdown, no e
       "activities": [
         {{
           "time": "09:00",
-          "activity": "Activity Name",
+          "activity": "Specific Activity at Specific Place (e.g., Breakfast at Leopold Cafe)",
           "details": "Brief description of the activity at specific place in {location_name}",
-          "location_zone": "Area/Neighborhood name",
+          "location_zone": "Specific Area/Neighborhood name",
           "cost": 500,
           "duration_minutes": 90
         }}

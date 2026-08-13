@@ -1,76 +1,79 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { UserPlus, Sparkles, Map, ArrowRight } from 'lucide-react';
+import { UserPlus, Sparkles, Map } from 'lucide-react';
 
 const steps = [
   {
-    icon: <UserPlus className="w-8 h-8" />,
+    icon: <UserPlus className="w-5 h-5" />,
     title: "Enter Preferences",
-    description: "Tell us where you want to go, your budget, mood, and travel style.",
-    color: 'blue',
-    gradient: 'from-blue-500 to-cyan-500',
-    glow: 'shadow-blue-500/20',
+    description: "Tell us your destination, budget, mood, and travel style.",
   },
   {
-    icon: <Sparkles className="w-8 h-8" />,
-    title: "AI Generates Plan",
-    description: "Gemini AI creates a personalized itinerary with real hotels and activities.",
-    color: 'violet',
-    gradient: 'from-violet-500 to-purple-500',
-    glow: 'shadow-violet-500/20',
+    icon: <Sparkles className="w-5 h-5" />,
+    title: "Plan Generated",
+    description: "A personalized itinerary with real hotels and activities is created instantly.",
   },
   {
-    icon: <Map className="w-8 h-8" />,
+    icon: <Map className="w-5 h-5" />,
     title: "Explore & Travel",
-    description: "Review your plan, tweak mood/pace on-the-fly, and enjoy your trip.",
-    color: 'emerald',
-    gradient: 'from-emerald-500 to-teal-500',
-    glow: 'shadow-emerald-500/20',
+    description: "Review your plan, adjust on-the-fly, and enjoy your trip.",
   }
 ];
 
 const HowItWorks = () => {
   return (
-    <section className="py-24 relative overflow-hidden">
-      <div className="absolute inset-0 mesh-bg-warm opacity-30" />
-
-      <div className="container mx-auto px-4 text-center relative z-10">
+    <section className="py-24" style={{ backgroundColor: 'var(--surface)' }}>
+      <div className="container mx-auto px-4 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-16"
+          transition={{ duration: 0.4 }}
+          className="mb-14"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold tracking-wider mb-6 uppercase">
-            Easy Process
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            How It <span className="text-gradient-cool">Works</span>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] mb-4" style={{ color: 'var(--accent)' }}>
+            How it works
+          </p>
+          <h2 className="text-3xl md:text-4xl font-semibold mb-4" style={{ color: 'var(--text)' }}>
+            Three simple steps
           </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Planning your dream vacation has never been easier. Just follow 3 simple steps.
+          <p className="max-w-lg mx-auto leading-relaxed" style={{ color: 'var(--text-2)' }}>
+            Planning your dream vacation has never been easier.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 relative">
-          {/* Connecting line */}
-          <div className="hidden md:block absolute top-16 left-[16%] w-[68%] h-px bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-emerald-500/20" />
+        <div className="grid md:grid-cols-3 gap-5 relative">
+          {/* Connecting line (desktop) */}
+          <div
+            className="hidden md:block absolute top-14 left-[20%] w-[60%] h-px"
+            style={{ backgroundColor: 'var(--border)' }}
+          />
 
           {steps.map((step, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.2 }}
-              className="glass-card p-8 flex flex-col items-center hover:bg-white/[0.05] transition-all duration-300 group"
+              transition={{ delay: index * 0.12, duration: 0.4 }}
+              className="p-7 rounded-2xl flex flex-col items-center"
+              style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}
             >
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${step.gradient} flex items-center justify-center mb-6 text-white shadow-lg ${step.glow} group-hover:scale-110 transition-transform relative z-10`}>
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 relative z-10"
+                style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+              >
                 {step.icon}
               </div>
-              <div className="text-xs text-gray-600 font-mono mb-3">STEP {index + 1}</div>
-              <h3 className="text-lg font-bold text-white mb-3">{step.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{step.description}</p>
+              <p className="text-[10px] font-medium uppercase tracking-widest mb-3" style={{ color: 'var(--text-3)' }}>
+                Step {index + 1}
+              </p>
+              <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text)' }}>
+                {step.title}
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                {step.description}
+              </p>
             </motion.div>
           ))}
         </div>

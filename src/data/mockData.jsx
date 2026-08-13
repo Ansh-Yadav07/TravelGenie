@@ -168,7 +168,7 @@ export const features = [
   {
     id: 1,
     title: 'Personalized Itinerary',
-    description: 'AI-curated travel plans tailored to your unique preferences and interests.',
+    description: 'Personalized travel plans tailored to your unique preferences and interests.',
     icon: 'Map'
   },
   {

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models.recommender import recommend_trip
+from services.trip_planner import recommend_trip
 import uvicorn
 
 app = FastAPI(

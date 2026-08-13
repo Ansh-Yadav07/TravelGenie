@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import logo from '../assets/logo.png';
 
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/explore', label: 'Explore' },
-  { href: '/#ai-planner', label: 'AI Planner' },
   { to: '/stays', label: 'Stays' },
   { to: '/about', label: 'About' },
 ];
@@ -23,76 +22,82 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    setIsOpen(false);
-  }, [location.pathname]);
+  useEffect(() => setIsOpen(false), [location.pathname]);
 
   return (
     <nav
       id="main-nav"
-      className={`fixed w-full z-50 transition-all duration-500 ${
-        isScrolled
-          ? 'bg-slate-950/80 backdrop-blur-2xl shadow-lg shadow-black/20 py-3 border-b border-white/5'
-          : 'bg-transparent py-5'
-      }`}
+      className="fixed w-full z-50 transition-all duration-300"
+      style={{
+        backgroundColor: isScrolled ? 'rgba(11, 13, 12, 0.85)' : 'transparent',
+        backdropFilter: isScrolled ? 'blur(12px)' : 'none',
+        borderBottom: isScrolled ? '1px solid var(--border)' : '1px solid transparent',
+        padding: isScrolled ? '14px 0' : '20px 0',
+      }}
     >
       <div className="container mx-auto px-6 flex justify-between items-center">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 group" id="nav-logo">
-          <div className="relative">
-            <img src={logo} alt="TravelGenie Logo" className="w-10 h-10 object-contain rounded-full ring-2 ring-blue-500/30 group-hover:ring-blue-400/60 transition-all" />
-            <div className="absolute -inset-1 bg-blue-500/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-          <span className="text-xl font-bold text-gradient" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        <Link to="/" className="flex items-center gap-2.5" id="nav-logo">
+          <img
+            src={logo}
+            alt="TravelGenie"
+            className="w-8 h-8 object-contain rounded-lg"
+          />
+          <span className="text-base font-semibold" style={{ color: 'var(--text)' }}>
             TravelGenie
           </span>
         </Link>
 
-        {/* Desktop Menu */}
+        {/* Desktop Links */}
         <div className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => {
-            const isActive = link.to && location.pathname === link.to;
-            const Component = link.to ? Link : 'a';
-            const props = link.to ? { to: link.to } : { href: link.href };
-
+            const isActive = location.pathname === link.to;
             return (
-              <Component
+              <Link
                 key={link.label}
-                {...props}
-                id={`nav-${link.label.toLowerCase().replace(/\s/g, '-')}`}
-                className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-                  isActive
-                    ? 'text-blue-400 bg-blue-500/10'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
+                to={link.to}
+                id={`nav-${link.label.toLowerCase()}`}
+                className="px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                style={{
+                  color: isActive ? 'var(--text)' : 'var(--text-2)',
+                  backgroundColor: isActive ? 'var(--surface)' : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--text)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = 'var(--text-2)';
+                }}
               >
                 {link.label}
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-indicator"
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full"
-                  />
-                )}
-              </Component>
+              </Link>
             );
           })}
 
+          <div className="w-px h-5 mx-3" style={{ backgroundColor: 'var(--border)' }} />
+
           <button
             id="nav-signin"
-            className="ml-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            style={{
+              backgroundColor: 'var(--accent)',
+              color: '#0B0D0C',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-h)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent)'}
           >
-            <Sparkles size={14} />
             Sign In
           </button>
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Toggle */}
         <button
           id="nav-mobile-toggle"
-          className="md:hidden text-gray-300 hover:text-white p-2 rounded-xl hover:bg-white/5 transition-all"
+          className="md:hidden p-2 rounded-lg transition-colors"
+          style={{ color: 'var(--text-2)' }}
           onClick={() => setIsOpen(!isOpen)}
         >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
+          {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
@@ -103,31 +108,34 @@ const Navbar = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-slate-900/95 backdrop-blur-2xl border-t border-white/5 overflow-hidden"
+            className="md:hidden overflow-hidden"
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderTop: '1px solid var(--border)',
+            }}
           >
-            <div className="container mx-auto px-6 py-6 flex flex-col gap-2">
+            <div className="container mx-auto px-6 py-4 flex flex-col gap-1">
               {navLinks.map((link) => {
-                const isActive = link.to && location.pathname === link.to;
-                const Component = link.to ? Link : 'a';
-                const props = link.to ? { to: link.to } : { href: link.href };
-
+                const isActive = location.pathname === link.to;
                 return (
-                  <Component
+                  <Link
                     key={link.label}
-                    {...props}
+                    to={link.to}
                     onClick={() => setIsOpen(false)}
-                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                      isActive
-                        ? 'text-blue-400 bg-blue-500/10'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
+                    className="px-3 py-2.5 rounded-lg text-sm font-medium"
+                    style={{
+                      color: isActive ? 'var(--text)' : 'var(--text-2)',
+                      backgroundColor: isActive ? 'var(--surface-2)' : 'transparent',
+                    }}
                   >
                     {link.label}
-                  </Component>
+                  </Link>
                 );
               })}
-              <button className="mt-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-white text-sm font-semibold w-full flex items-center justify-center gap-2">
-                <Sparkles size={14} />
+              <button
+                className="mt-2 px-4 py-2.5 rounded-lg text-sm font-medium w-full"
+                style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+              >
                 Sign In
               </button>
             </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Calendar, Wallet, Smile, Users, Activity, Bus, Sparkles, Plane, ArrowRight } from 'lucide-react';
+import { MapPin, Calendar, Wallet, Smile, Users, Activity, Plane, ArrowRight } from 'lucide-react';
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -22,7 +22,6 @@ const Hero = () => {
       alert("Please enter a destination and duration.");
       return;
     }
-
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -35,122 +34,113 @@ const Hero = () => {
         pace: formData.pace,
         transport: formData.transport,
       });
-
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/plan_trip?${params.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-      }
-
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data && data.matrix) {
-        navigate('/trip-result', {
-          state: {
-            plan: data,
-            query: { ...formData },
-          },
-        });
+        navigate('/trip-result', { state: { plan: data, query: { ...formData } } });
       } else {
         alert("Failed to generate trip plan. Please try again.");
       }
     } catch (error) {
       console.error("Error generating trip:", error);
-      alert("Failed to connect to AI server. Make sure it's running!");
+      alert("Failed to connect to server. Make sure it's running!");
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClass = "w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-white/[0.07] outline-none transition-all duration-300 text-sm";
-  const selectClass = "w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all duration-300 appearance-none text-sm cursor-pointer";
-  const labelClass = "flex items-center text-xs font-medium text-gray-400 gap-1.5 mb-2 uppercase tracking-wider";
+  const inputStyle = {
+    backgroundColor: 'var(--surface)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    borderRadius: 'var(--radius)',
+  };
+
+  const labelClass = "flex items-center gap-1.5 text-xs font-medium mb-2 uppercase tracking-wider";
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Animated Background */}
+      {/* Background */}
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
           alt="Travel Background"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px]"></div>
-        {/* Mesh gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-transparent to-slate-950"></div>
-        <div className="absolute inset-0 mesh-bg opacity-60"></div>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(11,13,12,0.82) 0%, rgba(11,13,12,0.90) 60%, #0B0D0C 100%)' }} />
       </div>
 
-      {/* Floating Particles */}
-      <div className="absolute inset-0 z-[1] overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-violet-500/8 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-pink-500/6 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }} />
-      </div>
-
-      {/* Hero Content */}
-      <div className="relative z-10 container mx-auto px-4 pt-28 pb-16">
+      {/* Content */}
+      <div className="relative z-10 container mx-auto px-4 pt-28 pb-20">
         <div className="text-center mb-10">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
+          <motion.p
+            initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold tracking-wider mb-6 uppercase"
+            transition={{ duration: 0.4 }}
+            className="text-xs font-medium uppercase tracking-[0.2em] mb-5"
+            style={{ color: 'var(--accent)' }}
           >
-            <Sparkles size={14} className="animate-pulse-slow" />
-            Powered by Gemini AI
-          </motion.div>
+            Plan smarter. Travel better.
+          </motion.p>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold mb-6 leading-[1.1] tracking-tight"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            transition={{ duration: 0.5, delay: 0.05 }}
+            className="text-4xl md:text-6xl lg:text-7xl font-semibold mb-5 leading-[1.08] tracking-tight"
+            style={{ color: 'var(--text)' }}
           >
-            Plan Your Dream
+            Your next trip,
             <br />
-            <span className="text-gradient">Adventure with AI</span>
+            thoughtfully planned.
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg text-gray-400 max-w-2xl mx-auto leading-relaxed"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-base md:text-lg max-w-xl mx-auto leading-relaxed"
+            style={{ color: 'var(--text-2)' }}
           >
-            Get personalized itineraries, smart hotel picks, and budget-optimized plans — all generated by AI in seconds.
+            Personalized itineraries, smart hotel picks, and budget-optimized plans — generated in seconds.
           </motion.p>
         </div>
 
-        {/* Search Card */}
+        {/* Form Card */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="glass-strong rounded-3xl p-6 md:p-8 max-w-5xl mx-auto glow-blue"
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="max-w-5xl mx-auto p-6 md:p-8 rounded-2xl"
           id="trip-form"
+          style={{
+            backgroundColor: 'rgba(18, 22, 20, 0.85)',
+            border: '1px solid var(--border)',
+            backdropFilter: 'blur(8px)',
+          }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            
             {/* Destination */}
             <div>
-              <label className={labelClass}>
-                <MapPin size={14} className="text-blue-400" /> Destination
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <MapPin size={13} style={{ color: 'var(--accent)' }} /> Destination
               </label>
               <input
                 id="input-destination"
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="Where to go?"
-                className={inputClass}
+                placeholder="Where to?"
+                className="w-full px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--accent)]"
+                style={{ ...inputStyle, '::placeholder': { color: 'var(--text-3)' } }}
               />
             </div>
 
             {/* Duration */}
             <div>
-              <label className={labelClass}>
-                <Calendar size={14} className="text-blue-400" /> Duration
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Calendar size={13} style={{ color: 'var(--accent)' }} /> Duration
               </label>
               <input
                 id="input-duration"
@@ -159,20 +149,22 @@ const Hero = () => {
                 onChange={(e) => setFormData({...formData, duration: e.target.value})}
                 min="1"
                 placeholder={formData.planMode === 'Hour-wise' ? 'Hours' : 'Days'}
-                className={inputClass}
+                className="w-full px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--accent)]"
+                style={inputStyle}
               />
             </div>
 
             {/* Plan Mode */}
             <div>
-              <label className={labelClass}>
-                <Calendar size={14} className="text-violet-400" /> Plan Type
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Calendar size={13} style={{ color: 'var(--text-3)' }} /> Plan Type
               </label>
               <select
                 id="select-planmode"
                 value={formData.planMode}
                 onChange={(e) => setFormData({ ...formData, planMode: e.target.value })}
-                className={selectClass}
+                className="w-full px-4 py-3 text-sm outline-none appearance-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value="Day-wise">Day-wise</option>
                 <option value="Hour-wise">Hour-wise</option>
@@ -181,14 +173,15 @@ const Hero = () => {
 
             {/* Budget */}
             <div>
-              <label className={labelClass}>
-                <Wallet size={14} className="text-emerald-400" /> Budget Range
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Wallet size={13} style={{ color: 'var(--text-3)' }} /> Budget
               </label>
-              <select 
+              <select
                 id="select-budget"
                 value={formData.budget}
                 onChange={(e) => setFormData({...formData, budget: e.target.value})}
-                className={selectClass}
+                className="w-full px-4 py-3 text-sm outline-none appearance-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value="Budget Friendly">Budget Friendly</option>
                 <option value="Moderate">Moderate</option>
@@ -199,14 +192,15 @@ const Hero = () => {
 
             {/* Mood */}
             <div>
-              <label className={labelClass}>
-                <Smile size={14} className="text-pink-400" /> Mood
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Smile size={13} style={{ color: 'var(--text-3)' }} /> Mood
               </label>
-              <select 
+              <select
                 id="select-mood"
                 value={formData.mood}
                 onChange={(e) => setFormData({...formData, mood: e.target.value})}
-                className={selectClass}
+                className="w-full px-4 py-3 text-sm outline-none appearance-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value="Relaxing">Relaxing</option>
                 <option value="Adventure">Adventure</option>
@@ -218,14 +212,15 @@ const Hero = () => {
 
             {/* Companions */}
             <div>
-              <label className={labelClass}>
-                <Users size={14} className="text-amber-400" /> Companions
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Users size={13} style={{ color: 'var(--text-3)' }} /> Companions
               </label>
               <select
                 id="select-companions"
                 value={formData.companions}
                 onChange={(e) => setFormData({...formData, companions: e.target.value})}
-                className={selectClass}
+                className="w-full px-4 py-3 text-sm outline-none appearance-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value="Solo">Solo</option>
                 <option value="Couple">Couple</option>
@@ -236,14 +231,15 @@ const Hero = () => {
 
             {/* Pace */}
             <div>
-              <label className={labelClass}>
-                <Activity size={14} className="text-cyan-400" /> Pace
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Activity size={13} style={{ color: 'var(--text-3)' }} /> Pace
               </label>
               <select
                 id="select-pace"
                 value={formData.pace}
                 onChange={(e) => setFormData({...formData, pace: e.target.value})}
-                className={selectClass}
+                className="w-full px-4 py-3 text-sm outline-none appearance-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value="Chill">Chill</option>
                 <option value="Moderate">Moderate</option>
@@ -253,14 +249,15 @@ const Hero = () => {
 
             {/* Transport */}
             <div>
-              <label className={labelClass}>
-                <Plane size={14} className="text-orange-400" /> Transport
+              <label className={labelClass} style={{ color: 'var(--text-2)' }}>
+                <Plane size={13} style={{ color: 'var(--text-3)' }} /> Transport
               </label>
               <select
                 id="select-transport"
                 value={formData.transport}
                 onChange={(e) => setFormData({...formData, transport: e.target.value})}
-                className={selectClass}
+                className="w-full px-4 py-3 text-sm outline-none appearance-none cursor-pointer"
+                style={inputStyle}
               >
                 <option value="Flight">Flight</option>
                 <option value="Train">Train</option>
@@ -270,14 +267,17 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Interests Chips */}
-          <div className="mt-6 pt-6 border-t border-white/5">
-            <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Interests</p>
+          {/* Interests */}
+          <div className="mt-6 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
+            <p className="text-xs font-medium mb-3 uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>Interests</p>
             <div className="flex flex-wrap gap-2">
               {["Beaches", "Mountains", "History", "Food", "Nightlife", "Shopping", "Nature"].map((tag) => (
                 <label key={tag} className="cursor-pointer">
                   <input type="checkbox" className="peer sr-only" />
-                  <span className="px-4 py-1.5 rounded-full text-sm border border-white/10 text-gray-500 hover:border-white/20 hover:text-gray-300 peer-checked:bg-blue-500/15 peer-checked:text-blue-400 peer-checked:border-blue-500/30 transition-all select-none">
+                  <span
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all select-none inline-block peer-checked:!bg-[var(--accent)] peer-checked:!text-[#0B0D0C] peer-checked:!border-[var(--accent)]"
+                    style={{ color: 'var(--text-3)', border: '1px solid var(--border)', backgroundColor: 'transparent' }}
+                  >
                     {tag}
                   </span>
                 </label>
@@ -287,34 +287,36 @@ const Hero = () => {
 
           {/* Generate Button */}
           <div className="mt-6">
-            <button 
+            <button
               id="btn-generate-trip"
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed group"
+              className="w-full md:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent-h)'; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>AI is planning your trip...</span>
+                  <div className="w-4 h-4 border-2 border-[#0B0D0C]/30 border-t-[#0B0D0C] rounded-full animate-spin" />
+                  Planning your trip...
                 </>
               ) : (
                 <>
-                  <Sparkles size={18} className="group-hover:animate-pulse" />
-                  <span>Generate AI Trip Plan</span>
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  Generate Trip Plan
+                  <ArrowRight size={16} />
                 </>
               )}
             </button>
           </div>
         </motion.div>
 
-        {/* Stats row */}
+        {/* Stats */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="flex justify-center gap-8 md:gap-16 mt-12 text-center"
+          transition={{ delay: 0.6 }}
+          className="flex justify-center gap-12 md:gap-20 mt-14 text-center"
         >
           {[
             { value: '10K+', label: 'Trips Planned' },
@@ -322,8 +324,8 @@ const Hero = () => {
             { value: '4.9★', label: 'User Rating' },
           ].map((stat) => (
             <div key={stat.label}>
-              <p className="text-2xl md:text-3xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{stat.value}</p>
-              <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider">{stat.label}</p>
+              <p className="text-xl md:text-2xl font-semibold" style={{ color: 'var(--text)' }}>{stat.value}</p>
+              <p className="text-[11px] mt-1 uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>{stat.label}</p>
             </div>
           ))}
         </motion.div>

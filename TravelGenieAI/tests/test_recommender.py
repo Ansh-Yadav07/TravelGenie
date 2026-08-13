@@ -1,4 +1,4 @@
-from models.recommender import recommend_trip
+from services.trip_planner import recommend_trip
 
 def test_recommend_trip():
     location = {"lat": 15.2993, "lon": 73.8567}

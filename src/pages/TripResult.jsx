@@ -14,12 +14,10 @@ const TripResult = () => {
         planMode: query?.planMode || 'Day-wise',
     });
     const isFirstRender = useRef(true);
-
     const canReplan = useMemo(() => Boolean(query?.location && query?.duration), [query]);
 
     const refreshPlan = async (nextMood, nextPlanMode) => {
         if (!canReplan) return;
-
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -32,66 +30,62 @@ const TripResult = () => {
                 pace: query.pace || 'Moderate',
                 transport: query.transport || 'Flight',
             });
-
             const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/plan_trip?${params.toString()}`);
-            if (!response.ok) {
-                throw new Error('Failed to update itinerary');
-            }
-
+            if (!response.ok) throw new Error('Failed to update itinerary');
             const data = await response.json();
-            if (data?.matrix) {
-                setPlan(data);
-            }
+            if (data?.matrix) setPlan(data);
         } catch (error) {
             console.error(error);
-            alert('Could not re-plan your trip right now. Please try again.');
+            alert('Could not re-plan your trip right now.');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-        const timeoutId = setTimeout(() => {
-            refreshPlan(controls.mood, controls.planMode);
-        }, 350);
-        return () => clearTimeout(timeoutId);
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        const t = setTimeout(() => refreshPlan(controls.mood, controls.planMode), 350);
+        return () => clearTimeout(t);
     }, [controls.mood, controls.planMode]);
 
-    if (!plan) {
-        return <Navigate to="/" replace />;
-    }
+    if (!plan) return <Navigate to="/" replace />;
 
-    const selectClass = "px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:ring-2 focus:ring-blue-500/50 outline-none appearance-none cursor-pointer transition-all";
+    const selectStyle = {
+        backgroundColor: 'var(--surface)',
+        border: '1px solid var(--border)',
+        color: 'var(--text)',
+        borderRadius: 'var(--radius)',
+    };
 
     return (
-        <div className="pt-24 min-h-screen bg-slate-950 mesh-bg">
+        <div className="pt-24 min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
             <div className="container mx-auto px-4 mb-6">
                 <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
                 >
                     <Link
                         to="/"
                         id="btn-back-home"
-                        className="text-gray-400 hover:text-blue-400 flex items-center gap-2 text-sm font-medium transition-colors group"
+                        className="flex items-center gap-2 text-sm font-medium transition-colors group"
+                        style={{ color: 'var(--text-2)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-2)'}
                     >
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                        Create Another Trip
+                        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
+                        New Trip
                     </Link>
 
                     <div className="flex flex-wrap gap-3 items-end">
                         <div>
-                            <label className="block text-[10px] font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Mood</label>
+                            <label className="block text-[10px] font-medium uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>Mood</label>
                             <select
                                 id="control-mood"
                                 value={controls.mood}
-                                onChange={(e) => setControls((prev) => ({ ...prev, mood: e.target.value }))}
-                                className={selectClass}
+                                onChange={(e) => setControls((p) => ({ ...p, mood: e.target.value }))}
+                                className="px-3.5 py-2.5 text-sm outline-none appearance-none cursor-pointer"
+                                style={selectStyle}
                             >
                                 <option value="Relaxing">Relaxing</option>
                                 <option value="Adventure">Adventure</option>
@@ -101,12 +95,13 @@ const TripResult = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-[10px] font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Plan Type</label>
+                            <label className="block text-[10px] font-medium uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>Plan Type</label>
                             <select
                                 id="control-planmode"
                                 value={controls.planMode}
-                                onChange={(e) => setControls((prev) => ({ ...prev, planMode: e.target.value }))}
-                                className={selectClass}
+                                onChange={(e) => setControls((p) => ({ ...p, planMode: e.target.value }))}
+                                className="px-3.5 py-2.5 text-sm outline-none appearance-none cursor-pointer"
+                                style={selectStyle}
                             >
                                 <option value="Day-wise">Day-wise</option>
                                 <option value="Hour-wise">Hour-wise</option>
@@ -116,18 +111,13 @@ const TripResult = () => {
                             id="btn-update-plan"
                             onClick={() => refreshPlan(controls.mood, controls.planMode)}
                             disabled={loading || !canReplan}
-                            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-white text-sm font-semibold disabled:opacity-40 hover:shadow-lg hover:shadow-blue-500/20 transition-all flex items-center gap-2"
+                            className="px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition-all flex items-center gap-2"
+                            style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
                         >
                             {loading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Re-planning...
-                                </>
+                                <><div className="w-3.5 h-3.5 border-2 border-[#0B0D0C]/30 border-t-[#0B0D0C] rounded-full animate-spin" /> Updating...</>
                             ) : (
-                                <>
-                                    <RefreshCw size={14} />
-                                    Update Plan
-                                </>
+                                <><RefreshCw size={13} /> Update</>
                             )}
                         </button>
                     </div>
