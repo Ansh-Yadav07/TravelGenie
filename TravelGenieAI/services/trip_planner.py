@@ -36,10 +36,21 @@ def _call_gemini(prompt: str) -> dict:
     }
 
     url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
-    resp = requests.post(url, headers=headers, json=payload, timeout=60)
-
-    if resp.status_code != 200:
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        resp = requests.post(url, headers=headers, json=payload, timeout=60)
+        
+        if resp.status_code == 200:
+            break
+            
         error_detail = resp.text[:500]
+        if resp.status_code in [503, 429] and attempt < max_retries - 1:
+            wait_time = 2 ** attempt  # 1s, 2s
+            print(f"[TravelGenie] Gemini API returned {resp.status_code}, retrying in {wait_time}s...")
+            time.sleep(wait_time)
+            continue
+            
         raise RuntimeError(f"Gemini API returned {resp.status_code}: {error_detail}")
 
     result = resp.json()
