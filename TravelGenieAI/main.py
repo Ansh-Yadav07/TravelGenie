@@ -1,14 +1,20 @@
+"""
+TravelGenie Backend — FastAPI server.
+Serves the /plan_trip endpoint that the React frontend calls.
+"""
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from services.trip_planner import recommend_trip
 import uvicorn
 
 app = FastAPI(
-    title="TravelGenie AI",
-    description="AI-powered trip planning API using Gemini",
-    version="2.0.0",
+    title="TravelGenie API",
+    description="AI-powered trip planning using Gemini",
+    version="3.0.0",
 )
 
+# Allow all origins so the frontend (on any domain) can call this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,11 +26,12 @@ app.add_middleware(
 
 @app.get("/")
 def home():
-    return {
-        "message": "Welcome to TravelGenie AI! Plan trips with /plan_trip.",
-        "version": "2.0.0",
-        "engine": "Gemini 2.0 Flash",
-    }
+    return {"status": "ok", "message": "TravelGenie API is running"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.get("/plan_trip")
@@ -38,31 +45,28 @@ def plan_trip(
     pace: str = "Moderate",
     transport: str = "Flight",
 ):
-    """Generate an AI-powered trip plan using Gemini."""
+    """Generate an AI-powered trip plan."""
     if not location or not location.strip():
         raise HTTPException(status_code=400, detail="Location is required")
     if duration < 1:
         raise HTTPException(status_code=400, detail="Duration must be at least 1")
 
-    loc_data = {"name": location.strip(), "lat": 0, "lon": 0}
-
-    result = recommend_trip(
-        location=loc_data,
-        duration=duration,
-        budget_str=budget,
-        mood=mood,
-        preferences=[],
-        companions=companions,
-        transport_mode=transport,
-        plan_mode=plan_mode,
-        pace=pace,
-    )
-    return result
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+    try:
+        result = recommend_trip(
+            location={"name": location.strip()},
+            duration=duration,
+            budget_str=budget,
+            mood=mood,
+            preferences=[],
+            companions=companions,
+            transport_mode=transport,
+            plan_mode=plan_mode,
+            pace=pace,
+        )
+        return result
+    except Exception as e:
+        print(f"[TravelGenie] Plan trip error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

@@ -1,104 +1,140 @@
 """
-Gemini-powered trip recommender for TravelGenie.
-Sends structured prompts to Gemini 1.5 Flash and parses JSON responses
-into the exact matrix schema the frontend expects.
+TravelGenie Trip Planner — Built from scratch.
+Calls the Gemini REST API directly via HTTP (no SDK).
+Returns the exact JSON matrix schema the React frontend expects.
 """
 
 import json
 import re
-import math
-import random
-from google import genai
+import time
+import requests
 from settings import GEMINI_API_KEY
 
-# Initialize the Gemini client
-client = genai.Client(api_key=GEMINI_API_KEY)
-MODEL_ID = "gemini-1.5-flash"
+# ---------------------------------------------------------------------------
+# Gemini REST API config
+# ---------------------------------------------------------------------------
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
 
 
-def _get_budget_total(budget_str):
-    """Map budget label to approximate INR total."""
-    budget_map = {
-        "Budget Friendly": 15000,
-        "Moderate": 40000,
-        "Luxury": 100000,
-        "Ultra Luxury": 300000,
+def _call_gemini(prompt: str) -> dict:
+    """
+    Call the Gemini REST API directly via HTTP POST.
+    Returns the parsed JSON from Gemini's text response.
+    Raises an exception with a clear message if anything goes wrong.
+    """
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY is not set in environment variables")
+
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 8192,
+            "responseMimeType": "application/json",
+        },
     }
-    return budget_map.get(budget_str, 30000)
+
+    url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+    resp = requests.post(url, headers=headers, json=payload, timeout=60)
+
+    if resp.status_code != 200:
+        error_detail = resp.text[:500]
+        raise RuntimeError(f"Gemini API returned {resp.status_code}: {error_detail}")
+
+    result = resp.json()
+
+    # Extract text from Gemini response structure
+    candidates = result.get("candidates", [])
+    if not candidates:
+        raise RuntimeError(f"Gemini returned no candidates: {json.dumps(result)[:300]}")
+
+    text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+    if not text.strip():
+        raise RuntimeError("Gemini returned empty text")
+
+    return _parse_json_response(text)
 
 
-def _build_gemini_prompt(location_name, duration, budget_str, mood, companions, transport_mode, plan_mode, pace):
-    """Build the structured prompt for Gemini."""
-    total_budget = _get_budget_total(budget_str)
-    duration_unit = "hours" if plan_mode == "Hour-wise" else "days"
+def _parse_json_response(text: str) -> dict:
+    """Parse JSON from Gemini response, stripping markdown fences if present."""
+    text = text.strip()
+    # Remove ```json ... ``` wrappers
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*\n?", "", text)
+        text = re.sub(r"\n?```\s*$", "", text)
+    return json.loads(text)
 
-    return f"""You are an expert travel planner AI for India. Create a highly specific, realistic trip plan.
 
-TRIP DETAILS:
-- Destination: {location_name}
-- Duration: {duration} {duration_unit}
-- Total Budget: ₹{total_budget:,} INR ({budget_str})
-- Mood/Vibe: {mood}
-- Travel Companions: {companions}
-- Preferred Transport: {transport_mode}
-- Planning Mode: {plan_mode}
+# ---------------------------------------------------------------------------
+# Budget helpers
+# ---------------------------------------------------------------------------
+BUDGET_MAP = {
+    "Budget Friendly": 15000,
+    "Moderate": 40000,
+    "Luxury": 100000,
+    "Ultra Luxury": 300000,
+}
+
+
+def _get_total_budget(budget_label: str) -> int:
+    return BUDGET_MAP.get(budget_label, 30000)
+
+
+# ---------------------------------------------------------------------------
+# Prompt builder
+# ---------------------------------------------------------------------------
+def _build_prompt(location: str, duration: int, budget_label: str, mood: str,
+                  companions: str, transport: str, plan_mode: str, pace: str) -> str:
+    """Build a detailed, strict prompt that forces Gemini to return specific places."""
+    total = _get_total_budget(budget_label)
+    stay_budget = int(total * 0.4)
+    transport_budget = int(total * 0.2)
+    activity_budget = total - stay_budget - transport_budget
+    unit = "hours" if plan_mode == "Hour-wise" else "days"
+
+    return f"""You are an expert Indian travel planner. Create a DETAILED trip plan for {location}.
+
+TRIP PARAMETERS:
+- Destination: {location}
+- Duration: {duration} {unit}
+- Budget: ₹{total:,} ({budget_label})
+- Mood: {mood}
+- Companions: {companions}
+- Transport preference: {transport}
+- Planning: {plan_mode}
 - Pace: {pace}
 
-BUDGET SPLIT (approximate):
-- Stays: 40% = ₹{int(total_budget * 0.4):,}
-- Transport: 20% = ₹{int(total_budget * 0.2):,}
-- Activities: 40% = ₹{int(total_budget * 0.4):,}
+BUDGET ALLOCATION:
+- Stays: ₹{stay_budget:,}
+- Transport: ₹{transport_budget:,}
+- Activities & Food: ₹{activity_budget:,}
 
-INSTRUCTIONS - BE VERY SPECIFIC:
-1. Generate 3 REAL, EXISTING stay/hotel options that actually exist in {location_name}. NO generic names like "Budget Stay". Use exact names (e.g., "Taj Lake Palace", "Zostel Udaipur"). Include the type (Resort/Hotel/Homestay/Hostel) and a relevant amenity. Calculate total_cost based on the duration.
-2. Generate transport options for 5 modes (Flight, Train, Bus, Car Rental, Taxi) with realistic cost estimates for traveling to/within {location_name}.
-3. Create a {"hour-by-hour" if plan_mode == "Hour-wise" else "day-by-day"} itinerary with REAL places, specific attractions, named restaurants, and actual experiences specific to {location_name}. DO NOT use generic terms like "Morning exploration" or "Local cuisine". Give the EXACT name of the cafe, restaurant, or temple (e.g., "Cafe Mondegar", "City Palace"). Each activity needs a realistic cost in INR.
-4. Activities should match the {mood} mood and {pace} pace.
-5. All costs must be realistic for {location_name} in India (use INR).
+CRITICAL RULES — YOU MUST FOLLOW THESE:
+1. USE ONLY REAL, SPECIFIC PLACE NAMES that actually exist in {location}. 
+   - For hotels: use real hotel names like "Hotel Navrang" or "Zostel Kota" — NEVER write "Premium Hotel in {location}" or "Budget Stay".
+   - For restaurants: use real restaurant names like "Jodhpur Sweet Home" or "Cafe Flavors" — NEVER write "Local cuisine" or "Try authentic food".
+   - For attractions: use real place names like "Jagmandir Palace", "Seven Wonders Park", "Chambal Garden" — NEVER write "Morning exploration" or "Afternoon activity".
+2. Every activity MUST have a specific, real place name in the "activity" field.
+3. The "details" field should describe what the visitor will do at that specific place.
+4. The "location_zone" should be the actual neighborhood/area name in {location}.
+5. Costs must be realistic for {location} in India (INR).
+6. Generate exactly 3 stay options, 5 transport options, and a full day-by-day itinerary.
+7. Each day should have 4-6 activities depending on pace ({pace}).
 
-You MUST respond with ONLY valid JSON in this exact structure (no markdown, no explanation):
+Return ONLY this JSON structure:
 {{
   "stays": [
-    {{
-      "name": "Exact Real Hotel Name",
-      "type": "Resort|Hotel|Homestay|Hostel",
-      "amenity": "Key Feature",
-      "total_cost": 5000
-    }},
-    {{
-      "name": "Exact Real Hotel Name 2",
-      "type": "Hotel",
-      "amenity": "Key Feature",
-      "total_cost": 3500
-    }},
-    {{
-      "name": "Exact Real Hotel Name 3",
-      "type": "Homestay",
-      "amenity": "Key Feature",
-      "total_cost": 2000
-    }}
+    {{"name": "Real Hotel Name", "type": "Hotel|Resort|Homestay|Hostel", "amenity": "Key feature", "total_cost": 3000}},
+    {{"name": "Real Hotel Name 2", "type": "Hotel", "amenity": "Key feature", "total_cost": 2000}},
+    {{"name": "Real Hotel Name 3", "type": "Homestay", "amenity": "Key feature", "total_cost": 1500}}
   ],
   "transport": [
-    {{
-      "mode": "Flight",
-      "estimated_total": 5000
-    }},
-    {{
-      "mode": "Train",
-      "estimated_total": 2000
-    }},
-    {{
-      "mode": "Bus",
-      "estimated_total": 1200
-    }},
-    {{
-      "mode": "Car Rental",
-      "estimated_total": 3500
-    }},
-    {{
-      "mode": "Taxi",
-      "estimated_total": 4000
-    }}
+    {{"mode": "Flight", "estimated_total": 5000}},
+    {{"mode": "Train", "estimated_total": 1500}},
+    {{"mode": "Bus", "estimated_total": 800}},
+    {{"mode": "Car Rental", "estimated_total": 3000}},
+    {{"mode": "Taxi", "estimated_total": 4000}}
   ],
   "scene": {{
     "category": "Chill|Active|Party|History|Romance|Balanced",
@@ -107,131 +143,85 @@ You MUST respond with ONLY valid JSON in this exact structure (no markdown, no e
   "itinerary_segments": [
     {{
       "segment_label": "Day 1",
-      "focus": "Describe the day's theme",
+      "focus": "Theme of the day e.g. Heritage Walk & Local Flavors",
       "activities": [
         {{
           "time": "09:00",
-          "activity": "Specific Activity at Specific Place (e.g., Breakfast at Leopold Cafe)",
-          "details": "Brief description of the activity at specific place in {location_name}",
-          "location_zone": "Specific Area/Neighborhood name",
-          "cost": 500,
-          "duration_minutes": 90
+          "activity": "Breakfast at Real Cafe Name",
+          "details": "What you will experience at this specific place",
+          "location_zone": "Real Area Name",
+          "cost": 300,
+          "duration_minutes": 60
         }}
       ]
     }}
   ],
-  "total_activity_spend": 5000
-}}
-
-IMPORTANT: Return ONLY the JSON object. No backticks, no markdown formatting, no explanation text.
-"""
+  "total_activity_spend": 4000
+}}"""
 
 
-def _parse_gemini_response(response_text):
-    """Parse Gemini's response, handling potential markdown formatting."""
-    text = response_text.strip()
-
-    # Remove markdown code fences if present
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\s*\n?", "", text)
-        text = re.sub(r"\n?```\s*$", "", text)
-
-    return json.loads(text)
-
-
-def _density_from_pace_and_mood(mood, pace):
-    """Determine activity density from pace and mood."""
-    if pace == "Chill":
-        return "Relaxed"
-    if pace == "Fast Paced":
-        return "Packed"
-    density_map = {
-        "Relaxing": "Relaxed",
-        "Adventure": "Packed",
-        "Party": "Packed",
-        "Cultural": "Moderate",
-        "Romantic": "Moderate",
-    }
-    return density_map.get(mood, "Moderate")
-
-
-def recommend_trip(location, duration, budget_str, mood, preferences, companions, transport_mode, plan_mode="Day-wise", pace="Moderate"):
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+def recommend_trip(location: dict | str, duration: int, budget_str: str, mood: str,
+                   preferences: list, companions: str, transport_mode: str,
+                   plan_mode: str = "Day-wise", pace: str = "Moderate") -> dict:
     """
-    Generate a trip plan using Gemini AI.
-    Falls back to a basic template if the API call fails.
-    Returns the same matrix schema the frontend expects.
+    Generate a trip plan by calling Gemini.
+    Returns the matrix dict the frontend expects.
     """
-    location_name = location.get("name", "your destination") if isinstance(location, dict) else str(location)
-    total_budget = _get_budget_total(budget_str)
-    activity_density = _density_from_pace_and_mood(mood, pace)
-
-    # Calculate time-based values
-    if plan_mode == "Hour-wise":
-        total_hours = max(1, int(duration))
-        nights = max(0, math.ceil(total_hours / 24) - 1)
-    else:
-        total_hours = max(1, int(duration)) * 24
-        nights = max(1, int(duration) - 1)
-
-    # Budget allocation
+    loc_name = location.get("name", str(location)) if isinstance(location, dict) else str(location)
+    total_budget = _get_total_budget(budget_str)
     stay_budget = int(total_budget * 0.4)
     transport_budget = int(total_budget * 0.2)
     activity_budget = total_budget - stay_budget - transport_budget
+    duration_label = f"{duration} hours" if plan_mode == "Hour-wise" else f"{duration} days"
 
-    # Duration label
-    duration_label = f"{int(duration)} hours" if plan_mode == "Hour-wise" else f"{int(duration)} days"
+    # Determine density
+    if pace == "Chill":
+        density = "Relaxed"
+    elif pace == "Fast Paced":
+        density = "Packed"
+    else:
+        density = {"Relaxing": "Relaxed", "Adventure": "Packed", "Party": "Packed"}.get(mood, "Moderate")
 
     try:
-        # Call Gemini API
-        prompt = _build_gemini_prompt(
-            location_name=location_name,
-            duration=duration,
-            budget_str=budget_str,
-            mood=mood,
-            companions=companions,
-            transport_mode=transport_mode,
-            plan_mode=plan_mode,
-            pace=pace,
-        )
+        prompt = _build_prompt(loc_name, duration, budget_str, mood, companions,
+                               transport_mode, plan_mode, pace)
+        data = _call_gemini(prompt)
+        print(f"[TravelGenie] ✅ Gemini returned data for '{loc_name}'")
 
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=prompt,
-        )
-
-        data = _parse_gemini_response(response.text)
-
-        # Build stays with budget flags
+        # Build stays
         stays_options = []
-        for stay in data.get("stays", []):
-            total_cost = int(stay.get("total_cost", 0))
-            is_over = total_cost > stay_budget
+        for s in data.get("stays", []):
+            cost = int(s.get("total_cost", 0))
+            over = cost > stay_budget
             stays_options.append({
-                "name": stay.get("name", "Unknown Stay"),
-                "type": stay.get("type", "Hotel"),
-                "amenity": stay.get("amenity", "Standard"),
-                "total_cost": total_cost,
-                "is_over_budget": is_over,
-                "visual_cue": "red_shadow" if is_over else "none",
+                "name": s.get("name", "Unknown"),
+                "type": s.get("type", "Hotel"),
+                "amenity": s.get("amenity", "Standard"),
+                "total_cost": cost,
+                "is_over_budget": over,
+                "visual_cue": "red_shadow" if over else "none",
             })
 
-        # Build transport with budget flags
+        # Build transport
         transport_options = []
         for t in data.get("transport", []):
             est = int(t.get("estimated_total", 0))
-            is_over = est > transport_budget
+            over = est > transport_budget
             transport_options.append({
                 "mode": t.get("mode", "Unknown"),
                 "estimated_total": est,
-                "is_over_budget": is_over,
-                "visual_cue": "red_shadow" if is_over else "none",
+                "is_over_budget": over,
+                "visual_cue": "red_shadow" if over else "none",
             })
         transport_options.sort(key=lambda x: x["estimated_total"])
 
-        # Build itinerary
-        itinerary_segments = data.get("itinerary_segments", [])
-        total_activity_spend = int(data.get("total_activity_spend", 0))
-        activity_budget_remaining = max(0, activity_budget - total_activity_spend)
+        # Itinerary
+        segments = data.get("itinerary_segments", [])
+        total_spend = int(data.get("total_activity_spend", 0))
+        remaining = max(0, activity_budget - total_spend)
 
         # Scene
         scene = data.get("scene", {})
@@ -246,7 +236,7 @@ def recommend_trip(location, duration, budget_str, mood, preferences, companions
                 },
                 "places_to_visit": {
                     "budget_allocated": activity_budget,
-                    "remaining_budget": activity_budget_remaining,
+                    "remaining_budget": remaining,
                     "mood": mood,
                     "primary_filter": "Selected Mood",
                     "secondary_filter": "Remaining Budget",
@@ -265,73 +255,17 @@ def recommend_trip(location, duration, budget_str, mood, preferences, companions
                     "visual_cue": scene.get("visual_cue", "Map"),
                 },
                 "itinerary": {
-                    "duration": int(duration),
+                    "duration": duration,
                     "duration_label": duration_label,
                     "planning_mode": plan_mode,
-                    "density": activity_density,
-                    "segments": itinerary_segments,
+                    "density": density,
+                    "segments": segments,
                     "visual_cue": "Timeline/Calendar View",
                 },
             }
         }
 
     except Exception as e:
-        print(f"[TravelGenie] Gemini API error: {e}")
-        # Fallback: return a minimal but valid response so the frontend doesn't crash
-        return _fallback_response(
-            location_name=location_name,
-            duration=int(duration),
-            budget_str=budget_str,
-            mood=mood,
-            plan_mode=plan_mode,
-            pace=pace,
-            companions=companions,
-            stay_budget=stay_budget,
-            transport_budget=transport_budget,
-            activity_budget=activity_budget,
-            activity_density=activity_density,
-            duration_label=duration_label,
-        )
-
-
-def _fallback_response(location_name, duration, budget_str, mood, plan_mode, pace, companions, stay_budget, transport_budget, activity_budget, activity_density, duration_label):
-    """Minimal fallback when Gemini is unavailable."""
-    random.seed(42)
-
-    stays_options = [
-        {"name": f"Premium Hotel in {location_name}", "type": "Hotel", "amenity": "Central Location", "total_cost": int(stay_budget * 0.9), "is_over_budget": False, "visual_cue": "none"},
-        {"name": f"Budget Stay in {location_name}", "type": "Homestay", "amenity": "Local Experience", "total_cost": int(stay_budget * 0.5), "is_over_budget": False, "visual_cue": "none"},
-        {"name": f"Luxury Resort in {location_name}", "type": "Resort", "amenity": "Pool & Spa", "total_cost": int(stay_budget * 1.3), "is_over_budget": True, "visual_cue": "red_shadow"},
-    ]
-
-    transport_options = [
-        {"mode": "Bus", "estimated_total": int(transport_budget * 0.4), "is_over_budget": False, "visual_cue": "none"},
-        {"mode": "Train", "estimated_total": int(transport_budget * 0.6), "is_over_budget": False, "visual_cue": "none"},
-        {"mode": "Taxi", "estimated_total": int(transport_budget * 0.8), "is_over_budget": False, "visual_cue": "none"},
-        {"mode": "Car Rental", "estimated_total": int(transport_budget * 1.0), "is_over_budget": False, "visual_cue": "none"},
-        {"mode": "Flight", "estimated_total": int(transport_budget * 1.4), "is_over_budget": True, "visual_cue": "red_shadow"},
-    ]
-
-    days = max(1, duration) if plan_mode == "Day-wise" else 1
-    segments = []
-    for d in range(1, days + 1):
-        segments.append({
-            "segment_label": f"Day {d}" if plan_mode == "Day-wise" else f"Hour-wise Plan ({duration}h)",
-            "focus": f"Explore {location_name} at a {pace.lower()} pace",
-            "activities": [
-                {"time": "09:00", "activity": f"Morning exploration", "details": f"Visit popular spots in {location_name}", "location_zone": "City Center", "cost": int(activity_budget * 0.1 / days), "duration_minutes": 120},
-                {"time": "12:00", "activity": f"Local cuisine", "details": f"Try authentic food in {location_name}", "location_zone": "Food District", "cost": int(activity_budget * 0.08 / days), "duration_minutes": 90},
-                {"time": "15:00", "activity": f"Afternoon activity", "details": f"{mood} experience in {location_name}", "location_zone": "Activity Zone", "cost": int(activity_budget * 0.12 / days), "duration_minutes": 120},
-                {"time": "19:00", "activity": f"Evening experience", "details": f"Wind down in {location_name}", "location_zone": "Entertainment Area", "cost": int(activity_budget * 0.1 / days), "duration_minutes": 120},
-            ],
-        })
-
-    return {
-        "matrix": {
-            "stays": {"budget_allocated": stay_budget, "options": stays_options, "primary_filter": "Total Budget", "secondary_filter": "Comfort + commute"},
-            "places_to_visit": {"budget_allocated": activity_budget, "remaining_budget": int(activity_budget * 0.3), "mood": mood, "primary_filter": "Selected Mood", "secondary_filter": "Remaining Budget", "pace": pace, "companions": companions},
-            "transport": {"budget_allocated": transport_budget, "options": transport_options, "primary_filter": "Locations", "secondary_filter": "Distance & Availability"},
-            "the_scene": {"mood": mood, "category": "Balanced", "visual_cue": "Map"},
-            "itinerary": {"duration": duration, "duration_label": duration_label, "planning_mode": plan_mode, "density": activity_density, "segments": segments, "visual_cue": "Timeline/Calendar View"},
-        }
-    }
+        print(f"[TravelGenie] ❌ ERROR: {e}")
+        # Re-raise so the API returns a 500 with the real error instead of silent garbage
+        raise RuntimeError(f"Trip generation failed: {e}")
