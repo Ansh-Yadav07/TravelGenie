@@ -6,18 +6,17 @@ const footerLinks = {
   Product: [
     { label: 'Explore', to: '/explore' },
     { label: 'Stays', to: '/stays' },
-    { label: 'Trip Planner', href: '/#trip-form' },
+    { label: 'Trip Planner', to: '/' },
   ],
   Company: [
     { label: 'About', to: '/about' },
-    { label: 'Careers', href: '#' },
-    { label: 'Blog', href: '#' },
+    { label: 'Our Team', to: '/about' },
+    { label: 'Contact', to: '/about' },
   ],
-  Support: [
-    { label: 'Contact', href: '#' },
-    { label: 'Help Center', href: '#' },
-    { label: 'Privacy', href: '#' },
-    { label: 'Terms', href: '#' },
+  Legal: [
+    { label: 'Privacy Policy', to: '/about' },
+    { label: 'Terms of Service', to: '/about' },
+    { label: 'Help Center', to: '/about' },
   ],
 };
 
@@ -45,23 +44,19 @@ const Footer = () => {
                 {category}
               </h4>
               <ul className="space-y-2.5">
-                {links.map((link) => {
-                  const Component = link.to ? Link : 'a';
-                  const props = link.to ? { to: link.to } : { href: link.href };
-                  return (
-                    <li key={link.label}>
-                      <Component
-                        {...props}
-                        className="text-sm transition-colors"
-                        style={{ color: 'var(--text-2)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-2)'}
-                      >
-                        {link.label}
-                      </Component>
-                    </li>
-                  );
-                })}
+                {links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      to={link.to}
+                      className="text-sm transition-colors"
+                      style={{ color: 'var(--text-2)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-2)'}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           ))}

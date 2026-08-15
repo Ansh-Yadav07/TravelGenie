@@ -112,10 +112,10 @@ const TripResult = () => {
                             onClick={() => refreshPlan(controls.mood, controls.planMode)}
                             disabled={loading || !canReplan}
                             className="px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition-all flex items-center gap-2"
-                            style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+                            style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
                         >
                             {loading ? (
-                                <><div className="w-3.5 h-3.5 border-2 border-[#0B0D0C]/30 border-t-[#0B0D0C] rounded-full animate-spin" /> Updating...</>
+                                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Updating...</>
                             ) : (
                                 <><RefreshCw size={13} /> Update</>
                             )}

@@ -83,7 +83,7 @@ const Stays = () => {
                 <button
                   className="w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
                   style={{ color: 'var(--text-2)', border: '1px solid var(--border)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent)'; e.currentTarget.style.color = '#0B0D0C'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--btn-text)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
                 >
                   Check Availability

@@ -12,7 +12,7 @@ import Footer from './components/Footer';
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col antialiased" style={{ backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
+      <div className="min-h-screen flex flex-col antialiased">
         <Navbar />
         <main className="flex-grow">
           <Routes>

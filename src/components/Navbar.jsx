@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import logo from '../assets/logo.png';
 
@@ -14,7 +14,19 @@ const navLinks = [
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tg-theme') || 'dark';
+    }
+    return 'dark';
+  });
   const location = useLocation();
+
+  // Apply theme on mount and change
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('tg-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -24,12 +36,14 @@ const Navbar = () => {
 
   useEffect(() => setIsOpen(false), [location.pathname]);
 
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+
   return (
     <nav
       id="main-nav"
       className="fixed w-full z-50 transition-all duration-300"
       style={{
-        backgroundColor: isScrolled ? 'rgba(11, 13, 12, 0.85)' : 'transparent',
+        backgroundColor: isScrolled ? 'var(--overlay)' : 'transparent',
         backdropFilter: isScrolled ? 'blur(12px)' : 'none',
         borderBottom: isScrolled ? '1px solid var(--border)' : '1px solid transparent',
         padding: isScrolled ? '14px 0' : '20px 0',
@@ -76,12 +90,25 @@ const Navbar = () => {
 
           <div className="w-px h-5 mx-3" style={{ backgroundColor: 'var(--border)' }} />
 
+          {/* Theme Toggle */}
+          <button
+            id="btn-theme-toggle"
+            onClick={toggleTheme}
+            className="p-2.5 rounded-lg transition-colors duration-200"
+            style={{ color: 'var(--text-2)', backgroundColor: 'transparent' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.backgroundColor = 'var(--surface)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
           <button
             id="nav-signin"
             className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
             style={{
               backgroundColor: 'var(--accent)',
-              color: '#0B0D0C',
+              color: 'var(--btn-text)',
             }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-h)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent)'}
@@ -91,14 +118,24 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Toggle */}
-        <button
-          id="nav-mobile-toggle"
-          className="md:hidden p-2 rounded-lg transition-colors"
-          style={{ color: 'var(--text-2)' }}
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg"
+            style={{ color: 'var(--text-2)' }}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+          <button
+            id="nav-mobile-toggle"
+            className="p-2 rounded-lg transition-colors"
+            style={{ color: 'var(--text-2)' }}
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -134,7 +171,7 @@ const Navbar = () => {
               })}
               <button
                 className="mt-2 px-4 py-2.5 rounded-lg text-sm font-medium w-full"
-                style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+                style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
               >
                 Sign In
               </button>

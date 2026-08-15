@@ -214,7 +214,7 @@ const TripPlan = ({ plan }) => {
               >
                 <div
                   className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 text-sm font-semibold"
-                  style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+                  style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
                 >
                   {idx + 1}
                 </div>

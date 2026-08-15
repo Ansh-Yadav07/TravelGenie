@@ -61,7 +61,7 @@ const HowItWorks = () => {
             >
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 relative z-10"
-                style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+                style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
               >
                 {step.icon}
               </div>

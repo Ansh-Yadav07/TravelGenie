@@ -68,7 +68,7 @@ const Hero = () => {
           alt="Travel Background"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(11,13,12,0.82) 0%, rgba(11,13,12,0.90) 60%, #0B0D0C 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, var(--overlay) 0%, var(--overlay-heavy) 60%, var(--bg) 100%)' }} />
       </div>
 
       {/* Content */}
@@ -115,7 +115,7 @@ const Hero = () => {
           className="max-w-5xl mx-auto p-6 md:p-8 rounded-2xl"
           id="trip-form"
           style={{
-            backgroundColor: 'rgba(18, 22, 20, 0.85)',
+            backgroundColor: 'var(--overlay)',
             border: '1px solid var(--border)',
             backdropFilter: 'blur(8px)',
           }}
@@ -275,7 +275,7 @@ const Hero = () => {
                 <label key={tag} className="cursor-pointer">
                   <input type="checkbox" className="peer sr-only" />
                   <span
-                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all select-none inline-block peer-checked:!bg-[var(--accent)] peer-checked:!text-[#0B0D0C] peer-checked:!border-[var(--accent)]"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all select-none inline-block peer-checked:!bg-[var(--accent)] peer-checked:!text-white peer-checked:!border-[var(--accent)]"
                     style={{ color: 'var(--text-3)', border: '1px solid var(--border)', backgroundColor: 'transparent' }}
                   >
                     {tag}
@@ -292,13 +292,13 @@ const Hero = () => {
               onClick={handleGenerate}
               disabled={loading}
               className="w-full md:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+              style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
               onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent-h)'; }}
               onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-[#0B0D0C]/30 border-t-[#0B0D0C] rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Planning your trip...
                 </>
               ) : (

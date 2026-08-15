@@ -128,7 +128,7 @@ const DestinationDetails = () => {
 
               <button
                 className="w-full mt-5 py-3.5 rounded-xl text-sm font-semibold transition-colors"
-                style={{ backgroundColor: 'var(--accent)', color: '#0B0D0C' }}
+                style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-h)'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--accent)'}
               >

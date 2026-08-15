@@ -1,21 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 @import "tailwindcss";
 
-/* ── Design Tokens ─────────────────────────────────── */
-:root {
-  --bg:       #0B0D0C;
-  --surface:  #121614;
-  --surface-2:#1A1D1B;
-  --border:   #242925;
-  --border-2: #2F3330;
-  --text:     #F1F3F2;
-  --text-2:   #9A9F9C;
-  --text-3:   #6B706D;
-  --accent:   #6FAF8A;
-  --accent-h: #5A9A75;
-  --accent-s: #4A8565;
+/* ── Dark Theme (default) ─────────────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg:       #0A0E14;
+  --surface:  #111820;
+  --surface-2:#182028;
+  --border:   #1E2A35;
+  --border-2: #283542;
+  --text:     #EDF2F7;
+  --text-2:   #8B99A8;
+  --text-3:   #5A6A7A;
+  --accent:   #4E9FE5;
+  --accent-h: #3B8DD4;
+  --accent-s: #2D7ABF;
+  --danger:   #E5534B;
+  --radius:   14px;
+  --btn-text: #FFFFFF;
+  --overlay:  rgba(10, 14, 20, 0.85);
+  --overlay-heavy: rgba(10, 14, 20, 0.92);
+  --badge-bg: rgba(10, 14, 20, 0.7);
+  color-scheme: dark;
+}
+
+/* ── Light Theme ──────────────────────────────────── */
+[data-theme="light"] {
+  --bg:       #F5F7FA;
+  --surface:  #FFFFFF;
+  --surface-2:#EDF0F5;
+  --border:   #D8DDE5;
+  --border-2: #C5CBD5;
+  --text:     #1A1D23;
+  --text-2:   #5A6270;
+  --text-3:   #8A919D;
+  --accent:   #2D7DD2;
+  --accent-h: #2468B5;
+  --accent-s: #1C5599;
   --danger:   #D9534F;
   --radius:   14px;
+  --btn-text: #FFFFFF;
+  --overlay:  rgba(245, 247, 250, 0.88);
+  --overlay-heavy: rgba(245, 247, 250, 0.95);
+  --badge-bg: rgba(0, 0, 0, 0.55);
+  color-scheme: light;
 }
 
 /* ── Base ──────────────────────────────────────────── */
@@ -30,6 +58,7 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
@@ -73,7 +102,7 @@
 
 /* ── Selection ─────────────────────────────────────── */
 ::selection {
-  background: rgba(111, 175, 138, 0.25);
+  background: rgba(78, 159, 229, 0.25);
   color: var(--text);
 }
 
@@ -81,4 +110,9 @@
 *:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ── Theme transition helpers ──────────────────────── */
+nav, footer, section, div[class*="rounded"], button, a, input, select {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
 }
