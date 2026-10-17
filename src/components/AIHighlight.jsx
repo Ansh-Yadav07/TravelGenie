@@ -39,16 +39,14 @@ const AIHighlight = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1, duration: 0.4 }}
-              className="p-7 rounded-2xl transition-colors duration-200 group"
+              className="p-7 rounded-2xl card-lift group"
               style={{
                 backgroundColor: 'var(--surface)',
                 border: '1px solid var(--border)',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-2)'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
             >
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mb-5"
+                className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6"
                 style={{ backgroundColor: 'var(--surface-2)', color: 'var(--accent)' }}
               >
                 {iconMap[feature.icon]}

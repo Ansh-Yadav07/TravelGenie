@@ -33,20 +33,18 @@ const Destinations = () => {
           {destinations.map((dest, index) => (
             <motion.div
               key={dest.id}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 28, scale: 0.96 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.35, delay: index * 0.05 }}
-              className="rounded-2xl overflow-hidden group cursor-pointer transition-colors duration-200"
+              transition={{ duration: 0.5, delay: (index % 3) * 0.08, ease: 'easeOut' }}
+              className="rounded-2xl overflow-hidden group cursor-pointer card-lift"
               style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-2)'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
             >
               <div className="relative h-52 overflow-hidden">
                 <img
                   src={dest.image}
                   alt={dest.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--surface) 0%, transparent 50%)' }} />
                 <div

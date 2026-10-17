@@ -68,6 +68,8 @@ const Hero = () => {
           alt="Travel Background"
           className="w-full h-full object-cover"
         />
+        <div className="blob" style={{ width: 380, height: 380, top: '8%', left: '5%', background: 'var(--accent)' }} />
+        <div className="blob" style={{ width: 320, height: 320, bottom: '10%', right: '8%', background: '#7C5CFF', animationDelay: '-6s' }} />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, var(--overlay) 0%, var(--overlay-heavy) 60%, var(--bg) 100%)' }} />
       </div>
 
@@ -93,7 +95,7 @@ const Hero = () => {
           >
             Your next trip,
             <br />
-            thoughtfully planned.
+            <span className="gradient-text">thoughtfully planned.</span>
           </motion.h1>
 
           <motion.p
@@ -291,7 +293,7 @@ const Hero = () => {
               id="btn-generate-trip"
               onClick={handleGenerate}
               disabled={loading}
-              className="w-full md:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-shine w-full md:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
               onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent-h)'; }}
               onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = 'var(--accent)'; }}
@@ -322,11 +324,17 @@ const Hero = () => {
             { value: '10K+', label: 'Trips Planned' },
             { value: '150+', label: 'Destinations' },
             { value: '4.9★', label: 'User Rating' },
-          ].map((stat) => (
-            <div key={stat.label}>
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + i * 0.12, duration: 0.45 }}
+              whileHover={{ y: -3, scale: 1.05 }}
+            >
               <p className="text-xl md:text-2xl font-semibold" style={{ color: 'var(--text)' }}>{stat.value}</p>
               <p className="text-[11px] mt-1 uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>{stat.label}</p>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
       </div>

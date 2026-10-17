@@ -56,11 +56,11 @@ const HowItWorks = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.12, duration: 0.4 }}
-              className="p-7 rounded-2xl flex flex-col items-center"
+              className="p-7 rounded-2xl flex flex-col items-center card-lift"
               style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)' }}
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 relative z-10"
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 relative z-10 pulse-ring"
                 style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
               >
                 {step.icon}
