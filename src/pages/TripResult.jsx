@@ -1,131 +1,146 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, Link, Navigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
-import TripPlan from '../components/TripPlan';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { MapPinOff } from 'lucide-react';
+import { Button, ChevronLink, EmptyState } from '../components/ui';
+import { useToast } from '../components/ui/Toast';
+import GenerationOverlay from '../components/trip/GenerationOverlay';
+import TripHero from '../components/trip/TripHero';
+import TripToolbar from '../components/trip/TripToolbar';
+import TripGlance from '../components/trip/TripGlance';
+import Itinerary from '../components/trip/Itinerary';
+import AdjustSheet from '../components/trip/AdjustSheet';
+import { GeneratedNote, StaysPanel, TipsPanel, TransportPanel } from '../components/trip/TripSidebar';
+import { normalizeTrip, tripToText } from '../components/trip/tripModel';
+import useTripGeneration from '../hooks/useTripGeneration';
+import { deleteTrip, getTrip, subscribeTrips } from '../lib/storage';
 
-const TripResult = () => {
-    const location = useLocation();
-    const { plan: initialPlan, query } = location.state || {};
-    const [plan, setPlan] = useState(initialPlan || null);
-    const [loading, setLoading] = useState(false);
-    const [controls, setControls] = useState({
-        mood: query?.mood || 'Relaxing',
-        planMode: query?.planMode || 'Day-wise',
-    });
-    const isFirstRender = useRef(true);
-    const canReplan = useMemo(() => Boolean(query?.location && query?.duration), [query]);
+/** A request that can be sent again (drops a start date that is now in the past). */
+function regenerable(request) {
+  if (!request.start_date) return request;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(`${request.start_date}T00:00:00`);
+  return Number.isNaN(start.getTime()) || start < today ? { ...request, start_date: '' } : request;
+}
 
-    const refreshPlan = async (nextMood, nextPlanMode) => {
-        if (!canReplan) return;
-        setLoading(true);
-        try {
-            const params = new URLSearchParams({
-                location: query.location,
-                duration: String(query.duration),
-                budget: query.budget || 'Moderate',
-                mood: nextMood,
-                plan_mode: nextPlanMode,
-                companions: query.companions || 'Solo',
-                pace: query.pace || 'Moderate',
-                transport: query.transport || 'Flight',
-            });
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/plan_trip?${params.toString()}`);
-            if (!response.ok) throw new Error('Failed to update itinerary');
-            const data = await response.json();
-            if (data?.matrix) setPlan(data);
-        } catch (error) {
-            console.error(error);
-            alert('Could not re-plan your trip right now.');
-        } finally {
-            setLoading(false);
-        }
-    };
+export default function TripResult() {
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const gen = useTripGeneration();
 
-    useEffect(() => {
-        if (isFirstRender.current) { isFirstRender.current = false; return; }
-        const t = setTimeout(() => refreshPlan(controls.mood, controls.planMode), 350);
-        return () => clearTimeout(t);
-    }, [controls.mood, controls.planMode]);
+  // Snapshot as a string so useSyncExternalStore gets a stable value.
+  const raw = useSyncExternalStore(subscribeTrips, () => JSON.stringify(getTrip(id)), () => 'null');
+  const stored = useMemo(() => {
+    try { return normalizeTrip(JSON.parse(raw)); } catch { return null; }
+  }, [raw]);
+  // Keep rendering the trip while we navigate away after deleting it.
+  const [deleted, setDeleted] = useState(null);
+  const trip = stored || deleted;
 
-    if (!plan) return <Navigate to="/" replace />;
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const openAdjust = useCallback(() => setAdjustOpen(true), []);
+  const closeAdjust = useCallback(() => setAdjustOpen(false), []);
 
-    const selectStyle = {
-        backgroundColor: 'var(--surface)',
-        border: '1px solid var(--border)',
-        color: 'var(--text)',
-        borderRadius: 'var(--radius)',
-    };
+  // One-time "ready" toast after a fresh generation; clear the flag so reloads don't repeat it.
+  const freshShown = useRef(null);
+  useEffect(() => {
+    if (!location.state?.fresh || !stored || freshShown.current === stored.id) return;
+    freshShown.current = stored.id;
+    toast('Your trip is ready', { tone: 'success' });
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, stored, toast, navigate]);
 
+  useEffect(() => {
+    if (!stored) return undefined;
+    const prev = document.title;
+    document.title = `${stored.overview.title} · TravelGenie`;
+    return () => { document.title = prev; };
+  }, [stored]);
+
+  if (!trip) {
     return (
-        <div className="pt-24 min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
-            <div className="container mx-auto px-4 mb-6">
-                <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                >
-                    <Link
-                        to="/"
-                        id="btn-back-home"
-                        className="flex items-center gap-2 text-sm font-medium transition-colors group"
-                        style={{ color: 'var(--text-2)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-2)'}
-                    >
-                        <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" />
-                        New Trip
-                    </Link>
-
-                    <div className="flex flex-wrap gap-3 items-end">
-                        <div>
-                            <label className="block text-[10px] font-medium uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>Mood</label>
-                            <select
-                                id="control-mood"
-                                value={controls.mood}
-                                onChange={(e) => setControls((p) => ({ ...p, mood: e.target.value }))}
-                                className="px-3.5 py-2.5 text-sm outline-none appearance-none cursor-pointer"
-                                style={selectStyle}
-                            >
-                                <option value="Relaxing">Relaxing</option>
-                                <option value="Adventure">Adventure</option>
-                                <option value="Romantic">Romantic</option>
-                                <option value="Cultural">Cultural</option>
-                                <option value="Party">Party</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-[10px] font-medium uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-3)' }}>Plan Type</label>
-                            <select
-                                id="control-planmode"
-                                value={controls.planMode}
-                                onChange={(e) => setControls((p) => ({ ...p, planMode: e.target.value }))}
-                                className="px-3.5 py-2.5 text-sm outline-none appearance-none cursor-pointer"
-                                style={selectStyle}
-                            >
-                                <option value="Day-wise">Day-wise</option>
-                                <option value="Hour-wise">Hour-wise</option>
-                            </select>
-                        </div>
-                        <button
-                            id="btn-update-plan"
-                            onClick={() => refreshPlan(controls.mood, controls.planMode)}
-                            disabled={loading || !canReplan}
-                            className="px-4 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition-all flex items-center gap-2"
-                            style={{ backgroundColor: 'var(--accent)', color: 'var(--btn-text)' }}
-                        >
-                            {loading ? (
-                                <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Updating...</>
-                            ) : (
-                                <><RefreshCw size={13} /> Update</>
-                            )}
-                        </button>
-                    </div>
-                </motion.div>
+      <div className="page-top container-x min-h-[70vh] flex items-center justify-center">
+        <EmptyState
+          icon={MapPinOff}
+          title="This trip isn’t on this device"
+          message="Trips are saved in the browser you planned them in. It may have been deleted, or planned on another device."
+          action={(
+            <div className="flex flex-col items-center gap-4">
+              <Button to="/plan">Plan a new trip</Button>
+              <ChevronLink to="/trips">See your saved trips</ChevronLink>
             </div>
-            <TripPlan plan={plan} />
-        </div>
+          )}
+        />
+      </div>
     );
-};
+  }
 
-export default TripResult;
+  const onRegenerate = () => gen.generate(regenerable(trip.request), { replace: false });
+
+  const onAdjustSubmit = (request) => {
+    setAdjustOpen(false);
+    gen.generate(regenerable(request), { replace: false });
+  };
+
+  const onShare = async () => {
+    const text = tripToText(trip);
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: trip.overview.title, text });
+        return;
+      } catch (e) {
+        if (e?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Itinerary copied to clipboard', { tone: 'success' });
+    } catch {
+      toast('Couldn’t copy the itinerary', { tone: 'error' });
+    }
+  };
+
+  const onDelete = () => {
+    setDeleted(trip);
+    deleteTrip(trip.id);
+    navigate('/trips', { replace: true });
+    toast('Trip deleted', { tone: 'info' });
+  };
+
+  return (
+    <article className="pb-20 md:pb-28 print:pb-0" aria-labelledby="trip-title">
+      <TripHero trip={trip} />
+      <TripToolbar
+        onAdjust={openAdjust}
+        onRegenerate={onRegenerate}
+        onShare={onShare}
+        onPrint={() => window.print()}
+        onDelete={onDelete}
+        busy={gen.status === 'running'}
+      />
+
+      <div className="container-x">
+        <TripGlance trip={trip} onAdjust={openAdjust} />
+
+        <div className="mt-12 md:mt-16 grid gap-10 lg:gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(300px,352px)] items-start print:block">
+          <Itinerary trip={trip} />
+
+          <aside
+            aria-label="Stays, transport and tips"
+            className="flex flex-col gap-4 min-w-0 lg:sticky lg:top-[calc(var(--nav-height)+16px)] lg:max-h-[calc(100dvh-var(--nav-height)-32px)] lg:overflow-y-auto lg:overscroll-contain lg:-mx-3 lg:px-3 lg:pt-1 lg:pb-3 [scrollbar-width:thin] print:static! print:max-h-none! print:overflow-visible! print:mt-10 print:gap-8"
+          >
+            <StaysPanel trip={trip} />
+            <TransportPanel trip={trip} />
+            <TipsPanel trip={trip} />
+            <GeneratedNote trip={trip} />
+          </aside>
+        </div>
+      </div>
+
+      <AdjustSheet open={adjustOpen} onClose={closeAdjust} trip={trip} onSubmit={onAdjustSubmit} />
+      <GenerationOverlay generation={gen} />
+    </article>
+  );
+}

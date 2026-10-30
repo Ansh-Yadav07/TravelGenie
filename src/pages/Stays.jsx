@@ -1,100 +1,94 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { stays } from '../data/mockData';
-import { MapPin, Star } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
+import { BedDouble } from 'lucide-react';
 
-const Stays = () => {
+import { Button, EmptyState, Reveal } from '../components/ui';
+import StayCard from '../components/explore/StayCard';
+import { ChipFilter } from '../components/explore/FilterBar';
+import { STAY_SETTINGS, parseList, settingOf } from '../components/explore/helpers';
+import { stays } from '../data/stays';
+import { getDestination } from '../data/destinations';
+import { pluralize } from '../lib/format';
+import { easeOut } from '../lib/ui';
+
+const SETTING_OPTIONS = STAY_SETTINGS.filter((s) => stays.some((st) => settingOf(st) === s.id));
+const SETTING_IDS = SETTING_OPTIONS.map((s) => s.id);
+
+export default function Stays() {
+  const reduce = useReducedMotion();
+  const [params, setParams] = useSearchParams();
+  const selected = useMemo(() => parseList(params.get('type'), SETTING_IDS), [params]);
+
+  useEffect(() => { document.title = 'Stays · TravelGenie'; }, []);
+
+  const setSelected = (ids) => setParams((prev) => {
+    const next = new URLSearchParams(prev);
+    if (ids.length) next.set('type', ids.join(',')); else next.delete('type');
+    return next;
+  }, { replace: true });
+
+  const toggle = (id) => setSelected(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+
+  const results = useMemo(
+    () => (selected.length ? stays.filter((s) => selected.includes(settingOf(s))) : stays),
+    [selected],
+  );
+
   return (
-    <div className="pt-24 pb-16 min-h-screen">
-      <div className="container mx-auto px-4">
+    <div className="page-top pb-24">
+      <header className="container-x pt-4 md:pt-10">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={reduce ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.6, ease: easeOut }}
+          className="max-w-[760px]"
         >
-          <p className="text-xs font-medium uppercase tracking-[0.2em] mb-4" style={{ color: 'var(--accent)' }}>
-            Accommodation
-          </p>
-          <h1 className="text-3xl md:text-4xl font-semibold mb-3" style={{ color: 'var(--text)' }}>
-            Find Your Perfect Stay
-          </h1>
-          <p className="max-w-lg mx-auto" style={{ color: 'var(--text-2)' }}>
-            Handpicked hotels, resorts, and villas for comfort and style.
+          <p className="t-eyebrow mb-3">Stays</p>
+          <h1 className="t-display">Places worth the night.</h1>
+          <p className="mt-4 text-[19px] md:text-[21px] leading-[1.4] tracking-[-0.015em] t-secondary">
+            A short list of India’s most memorable hotels — lake palaces, backwater resorts and Himalayan retreats.
+            Every trip TravelGenie plans also suggests stays to match your budget.
           </p>
         </motion.div>
+      </header>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {stays.map((stay, index) => (
-            <motion.div
-              key={stay.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.06, duration: 0.3 }}
-              className="rounded-2xl overflow-hidden group transition-colors"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div className="relative h-52 overflow-hidden">
-                <img
-                  src={stay.image}
-                  alt={stay.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--surface) 0%, transparent 50%)' }} />
-                <div
-                  className="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"
-                  style={{ backgroundColor: 'rgba(11,13,12,0.7)', backdropFilter: 'blur(4px)', color: '#E5C07B' }}
-                >
-                  <Star size={11} fill="#E5C07B" /> {stay.rating}
-                </div>
-                <div
-                  className="absolute top-3 left-3 px-2 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider"
-                  style={{ backgroundColor: 'rgba(11,13,12,0.7)', backdropFilter: 'blur(4px)', color: 'var(--text-2)' }}
-                >
-                  {stay.type}
-                </div>
-              </div>
+      <section aria-label="Filter stays" className="container-x mt-10 md:mt-14">
+        <ChipFilter
+          label="Filter by setting"
+          options={SETTING_OPTIONS}
+          selected={selected}
+          onToggle={toggle}
+          onClear={() => setSelected([])}
+          allLabel="All stays"
+        />
+        <p className="mt-6 pt-5 hairline-t t-subhead t-secondary tabular" role="status">{pluralize(results.length, 'stay')}</p>
+      </section>
 
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--text)' }}>{stay.name}</h3>
-                    <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-3)' }}>
-                      <MapPin size={11} /> {stay.location}
-                    </div>
-                  </div>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{stay.price}</p>
-                </div>
+      <section aria-label="Stays" className="container-x mt-6">
+        {results.length > 0 ? (
+          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {results.map((s, i) => (
+              <Reveal as="li" key={s.id} delay={(i % 3) * 0.05}>
+                <StayCard stay={s} destinationName={getDestination(s.destinationSlug)?.name} />
+              </Reveal>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            icon={BedDouble}
+            title="No stays match"
+            message="Try another setting, or see them all."
+            action={<Button variant="secondary" onClick={() => setSelected([])}>Show all stays</Button>}
+          />
+        )}
 
-                <div className="pt-3 mb-4" style={{ borderTop: '1px solid var(--border)' }}>
-                  <p className="text-[10px] font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>Amenities</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {stay.amenities.map((amenity, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 rounded-md text-[11px]"
-                        style={{ color: 'var(--text-3)', backgroundColor: 'var(--surface-2)', border: '1px solid var(--border)' }}
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  className="w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-                  style={{ color: 'var(--text-2)', border: '1px solid var(--border)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--btn-text)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
-                >
-                  Check Availability
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+        <p className="t-footnote t-tertiary mt-10 max-w-[720px]">
+          Prices are indicative starting rates per room per night, in INR, and change with dates and availability.
+          Ratings are typical guest scores. TravelGenie doesn’t take bookings — check rates with the hotel or your
+          preferred booking site. Where we don’t have a photo of the property itself, the image shows its setting.
+        </p>
+      </section>
     </div>
   );
-};
-
-export default Stays;
+}

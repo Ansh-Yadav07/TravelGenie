@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "api": "cd TravelGenieAI && .venv/bin/python main.py",
+    "api:setup": "cd TravelGenieAI && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "api:test": "cd TravelGenieAI && .venv/bin/python -m pytest -q",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

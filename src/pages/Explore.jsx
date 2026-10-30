@@ -1,108 +1,169 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Star, ArrowUpRight } from 'lucide-react';
-import { destinations } from '../data/mockData';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, SearchX, Sparkles } from 'lucide-react';
 
-const Explore = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+import { Button, EmptyState, Reveal, SegmentedControl } from '../components/ui';
+import DestinationCard from '../components/explore/DestinationCard';
+import { ChipFilter, SearchField } from '../components/explore/FilterBar';
+import { interestsIn, matchesQuery, parseList, planLink } from '../components/explore/helpers';
+import { destinations } from '../data/destinations';
+import { pluralize } from '../lib/format';
+import { easeOut } from '../lib/ui';
 
-  const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return destinations;
-    return destinations.filter((d) =>
-      d.name.toLowerCase().includes(searchTerm.toLowerCase())
+const INTEREST_OPTIONS = interestsIn(destinations);
+const INTEREST_IDS = INTEREST_OPTIONS.map((i) => i.id);
+const SORTS = [
+  { id: 'popular', label: 'Popular' },
+  { id: 'price', label: 'Price' },
+];
+
+export default function Explore() {
+  const reduce = useReducedMotion();
+  const [params, setParams] = useSearchParams();
+  const query = params.get('q') ?? '';
+  const interests = useMemo(() => parseList(params.get('interests'), INTEREST_IDS), [params]);
+  const sort = params.get('sort') === 'price' ? 'price' : 'popular';
+
+  useEffect(() => { document.title = 'Explore India · TravelGenie'; }, []);
+
+  /** Patch URL params; empty values are removed. Replace history so typing doesn't spam Back. */
+  const update = (patch) => {
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(patch).forEach(([k, v]) => {
+        if (v == null || v === '' || (Array.isArray(v) && v.length === 0)) next.delete(k);
+        else next.set(k, Array.isArray(v) ? v.join(',') : v);
+      });
+      return next;
+    }, { replace: true });
+  };
+
+  const toggleInterest = (id) =>
+    update({ interests: interests.includes(id) ? interests.filter((i) => i !== id) : [...interests, id] });
+  const clearAll = () => update({ q: '', interests: [] });
+
+  const results = useMemo(() => {
+    const list = destinations.filter(
+      (d) => matchesQuery(d, query) && (interests.length === 0 || d.tags.some((t) => interests.includes(t))),
     );
-  }, [searchTerm]);
+    return sort === 'price' ? [...list].sort((a, b) => a.startingPrice - b.startingPrice) : list;
+  }, [query, interests, sort]);
+
+  const trimmed = query.trim();
+  const filtered = Boolean(trimmed) || interests.length > 0;
 
   return (
-    <div className="pt-24 pb-16 min-h-screen">
-      <div className="container mx-auto px-4">
+    <div className="page-top pb-24">
+      <header className="container-x pt-4 md:pt-10">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={reduce ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.6, ease: easeOut }}
+          className="max-w-[760px]"
         >
-          <h1 className="text-3xl md:text-4xl font-semibold mb-3" style={{ color: 'var(--text)' }}>
-            Explore Destinations
-          </h1>
-          <p className="max-w-md mx-auto" style={{ color: 'var(--text-2)' }}>
-            Discover popular and hidden gems for your next adventure.
+          <p className="t-eyebrow mb-3">Explore</p>
+          <h1 className="t-display">Explore India.</h1>
+          <p className="mt-4 text-[19px] md:text-[21px] leading-[1.4] tracking-[-0.015em] t-secondary">
+            Hand-picked places we love, from Himalayan passes to coral islands. Open one for highlights and the best
+            time to go — or plan a trip anywhere in a tap.
           </p>
         </motion.div>
+      </header>
 
-        {/* Search */}
-        <div className="flex justify-center mb-12">
-          <div className="relative w-full max-w-md">
-            <input
-              id="search-destinations"
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search destination..."
-              className="w-full px-4 py-3 pl-10 rounded-xl text-sm outline-none transition-colors"
-              style={{
-                backgroundColor: 'var(--surface)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)',
-              }}
-            />
-            <Search className="absolute left-3.5 top-3.5 w-4 h-4" style={{ color: 'var(--text-3)' }} />
-          </div>
+      {/* Filters */}
+      <section aria-label="Filter destinations" className="container-x mt-10 md:mt-14">
+        <div className="flex flex-col gap-4">
+          <SearchField
+            value={query}
+            onChange={(v) => update({ q: v })}
+            label="Search destinations"
+            placeholder="Search by place, state or vibe"
+            className="md:max-w-[460px]"
+          />
+          <ChipFilter
+            label="Filter by interest"
+            options={INTEREST_OPTIONS}
+            selected={interests}
+            onToggle={toggleInterest}
+            onClear={() => update({ interests: [] })}
+            allLabel="All interests"
+          />
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((dest, index) => (
-            <motion.div
-              key={dest.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.04, duration: 0.3 }}
-              className="rounded-2xl overflow-hidden group transition-colors"
-              style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
-            >
-              <div className="relative h-52 overflow-hidden">
-                <img
-                  src={dest.image}
-                  alt={dest.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--surface) 0%, transparent 50%)' }} />
-                <div
-                  className="absolute top-3 right-3 px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"
-                  style={{ backgroundColor: 'rgba(11,13,12,0.7)', backdropFilter: 'blur(4px)', color: '#E5C07B' }}
-                >
-                  <Star size={11} fill="#E5C07B" /> {dest.rating}
-                </div>
-              </div>
-              <div className="p-5">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{dest.name}</h3>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>{dest.price}</span>
-                </div>
-                <p className="text-xs leading-relaxed line-clamp-2 mb-4" style={{ color: 'var(--text-2)' }}>{dest.description}</p>
-                <Link
-                  to={`/explore/${dest.id}`}
-                  className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-                  style={{ color: 'var(--text-2)', border: '1px solid var(--border)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--btn-text)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-2)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
-                >
-                  View Details <ArrowUpRight size={13} />
-                </Link>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <p style={{ color: 'var(--text-2)' }}>No destinations found for "{searchTerm}"</p>
+        <div className="mt-6 pt-5 hairline-t flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <p className="t-subhead t-secondary tabular" role="status">{pluralize(results.length, 'destination')}</p>
+            {filtered && results.length > 0 && (
+              <button type="button" onClick={clearAll} className="link t-subhead min-h-[44px] -my-3 px-1">Clear</button>
+            )}
           </div>
+          <SegmentedControl
+            label="Sort destinations"
+            options={SORTS}
+            value={sort}
+            onChange={(v) => update({ sort: v === 'popular' ? '' : v })}
+            size="sm"
+            fullWidth={false}
+          />
+        </div>
+      </section>
+
+      {/* Results */}
+      <section aria-label="Destinations" className="container-x mt-8">
+        {results.length > 0 ? (
+          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {results.map((d, i) => (
+              <Reveal as="li" key={d.slug} delay={(i % 3) * 0.05}>
+                <DestinationCard destination={d} eager={i < 3} />
+              </Reveal>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title={trimmed ? `No curated guide for “${trimmed}” yet` : 'No destinations match'}
+            message={
+              trimmed
+                ? 'That’s fine — TravelGenie can plan a trip to any city, town or region in India, not just these.'
+                : 'Try fewer interests, or clear the filters to see everything.'
+            }
+            action={
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {trimmed && (
+                  <Button to={planLink(trimmed)} icon={Sparkles} className="!whitespace-normal max-w-full text-center py-2.5">Plan a trip to “{trimmed}”</Button>
+                )}
+                <Button variant="secondary" onClick={clearAll}>Clear filters</Button>
+              </div>
+            }
+          />
         )}
-      </div>
+      </section>
+
+      {/* Anywhere banner */}
+      {results.length > 0 && (
+        <section className="container-x mt-16 md:mt-24">
+          <Reveal>
+            <div className="card-inset rounded-[24px] px-6 py-8 md:px-12 md:py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="max-w-[560px]">
+                <h2 className="t-title-2">Somewhere else in mind?</h2>
+                <p className="t-body t-secondary mt-2">
+                  These are just starting points. Type any destination into the planner and Gemini will build the trip
+                  around it.
+                </p>
+              </div>
+              <Button
+                to={trimmed ? planLink(trimmed) : '/plan'}
+                size="lg"
+                iconRight={ArrowRight}
+                className="self-start md:self-auto max-w-full"
+              >
+                <span className="truncate">{trimmed ? `Plan a trip to “${trimmed}”` : 'Plan any trip'}</span>
+              </Button>
+            </div>
+          </Reveal>
+        </section>
+      )}
     </div>
   );
-};
-
-export default Explore;
+}

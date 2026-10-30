@@ -23,10 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 
-# Python and AI model files
-# TravelGenieAI/  # Commented out to allow deployment
+# Python backend
 __pycache__/
+.venv/
+venv/
+.pytest_cache/
 *.py[cod]
 *$py.class
 .env
+.env.*
+!.env.example
 .vite/
