@@ -48,9 +48,9 @@ const PRINCIPLES = [
 ];
 
 const TEAM = [
-  { name: 'Ansh Yadav', role: 'Co-creator', hue: [211, 255] },
-  { name: 'Taraksh Pratap Singh', role: 'Co-creator', hue: [262, 300] },
-  { name: 'Dishan Kumar', role: 'Co-creator', hue: [168, 205] },
+  { name: 'Ansh Yadav', role: 'Co-creator' },
+  { name: 'Taraksh Pratap Singh', role: 'Co-creator' },
+  { name: 'Dishan Kumar', role: 'Co-creator' },
 ];
 
 const initials = (name) => {
@@ -78,7 +78,7 @@ export default function About() {
           <h1 className="t-hero">
             A travel planner
             <br />
-            <span className="t-gradient">that respects you.</span>
+            <span className="t-secondary">that respects you.</span>
           </h1>
           <p className="mt-6 mx-auto max-w-[640px] text-[19px] md:text-[21px] leading-[1.45] tracking-[-0.015em] t-secondary">
             TravelGenie turns a few choices into a complete trip across India — days, places, stays, transport and a
@@ -116,7 +116,7 @@ export default function About() {
       </section>
 
       {/* Principles */}
-      <section className="section" style={{ background: 'var(--bg-grouped)' }} aria-labelledby="principles-title">
+      <section className="section surface-grouped" aria-labelledby="principles-title">
         <div className="container-x">
           <Reveal className="max-w-[720px]">
             <p className="t-eyebrow mb-2">Our principles</p>
@@ -149,11 +149,7 @@ export default function About() {
             <Reveal as="li" key={m.name} delay={i * 0.06} className="flex flex-col items-center text-center">
               <span
                 className="w-28 h-28 rounded-full flex items-center justify-center text-[36px] font-semibold tracking-[-0.02em] select-none"
-                style={{
-                  background: `linear-gradient(135deg, hsl(${m.hue[0]} 90% 58%), hsl(${m.hue[1]} 75% 52%))`,
-                  color: '#fff',
-                  boxShadow: 'var(--shadow-md)',
-                }}
+                style={{ background: 'var(--surface-2)', color: 'var(--text)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--separator)' }}
                 aria-hidden
               >
                 {initials(m.name)}

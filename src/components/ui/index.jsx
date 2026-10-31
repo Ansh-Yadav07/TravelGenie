@@ -236,7 +236,7 @@ export function EmptyState({ icon: Icon, title, message, action, className }) {
   );
 }
 
-/* ── SmartImage: fades in, falls back to a gradient on error ──────── */
+/* ── SmartImage: fades in, falls back to a neutral panel on error ──────── */
 export function SmartImage({ src, alt, className, imgClassName, fallbackLabel, loading = 'lazy', ...rest }) {
   const [state, setState] = useState('loading');
   return (
@@ -252,7 +252,7 @@ export function SmartImage({ src, alt, className, imgClassName, fallbackLabel, l
           className={cx('transition-opacity duration-500', state === 'loaded' ? 'opacity-100' : 'opacity-0', imgClassName)}
         />
       ) : (
-        <div className="absolute inset-0 flex items-end p-4" style={{ background: 'linear-gradient(135deg, #0a84ff 0%, #5e5ce6 55%, #bf5af2 100%)' }}>
+        <div className="absolute inset-0 flex items-end p-4" style={{ background: 'linear-gradient(160deg, #48484a 0%, #1c1c1e 100%)' }}>
           {fallbackLabel && <span className="t-title-3" style={{ color: '#fff' }}>{fallbackLabel}</span>}
         </div>
       )}

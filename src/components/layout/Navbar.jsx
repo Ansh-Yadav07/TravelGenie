@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, Menu, Monitor, Moon, Sun, X } from 'lucide-react';
 
-import logoMark from '../../assets/logo-mark.png';
+import Logo from '../ui/Logo';
 import { Button, SegmentedControl } from '../ui';
 import { useTheme } from '../../hooks/useTheme';
 import { useSavedTrips, useScrolledPast } from '../home/hooks';
@@ -69,7 +69,7 @@ export default function Navbar() {
       >
         <nav aria-label="Main" className="container-x flex items-center justify-between gap-4" style={{ height: 'var(--nav-height)' }}>
           <Link to="/" onClick={closeMenu} className="flex items-center gap-2 shrink-0 -ml-1 px-1 rounded-[10px]" aria-label="TravelGenie home">
-            <img src={logoMark} alt="" width={28} height={28} className="w-7 h-7 rounded-[8px]" />
+            <Logo size={28} />
             <span className="text-[17px] font-semibold tracking-[-0.02em]" style={{ color: 'var(--text)' }}>TravelGenie</span>
           </Link>
 

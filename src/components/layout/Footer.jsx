@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import logoMark from '../../assets/logo-mark.png';
+import Logo from '../ui/Logo';
 
 const YEAR = new Date().getFullYear();
 
@@ -21,7 +21,7 @@ const COLUMNS = [
 
 export default function Footer() {
   return (
-    <footer className="no-print t-footnote hairline-t" style={{ background: 'var(--bg-grouped)', color: 'var(--text-2)' }}>
+    <footer className="no-print t-footnote hairline-t surface-grouped" style={{ color: 'var(--text-2)' }}>
       <div className="container-x pt-8 pb-10">
         <div className="pb-5 hairline-b">
           <p className="t-tertiary max-w-3xl">
@@ -32,7 +32,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-[1.4fr_1fr_1fr] gap-x-6 gap-y-8 py-8">
           <div className="col-span-2 sm:col-span-1">
             <Link to="/" className="inline-flex items-center gap-2 rounded-[10px]" aria-label="TravelGenie home">
-              <img src={logoMark} alt="" width={24} height={24} className="w-6 h-6 rounded-[7px]" />
+              <Logo size={24} />
               <span className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>TravelGenie</span>
             </Link>
             <p className="mt-3 max-w-[280px]">

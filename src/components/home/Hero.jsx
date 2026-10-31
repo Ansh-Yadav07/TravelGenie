@@ -15,7 +15,7 @@ export default function Hero() {
         <motion.h1 id="hero-title" className="t-hero" {...enter(0.05)}>
           Plan less.
           <br />
-          <span className="t-gradient">Travel more.</span>
+          <span className="t-secondary">Travel more.</span>
         </motion.h1>
         <motion.p
           className="mt-6 mx-auto max-w-[640px] text-[19px] md:text-[21px] leading-[1.4] tracking-[-0.015em] t-secondary"
@@ -34,3 +34,4 @@ export default function Hero() {
     </section>
   );
 }
+

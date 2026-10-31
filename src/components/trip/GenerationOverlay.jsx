@@ -72,7 +72,7 @@ export default function GenerationOverlay({ generation }) {
             ) : (
               <>
                 <div className="flex items-center gap-3.5 mb-6">
-                  <div className="relative w-12 h-12 shrink-0 rounded-[15px] flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0a84ff, #5e5ce6 55%, #bf5af2)' }}>
+                  <div className="relative w-12 h-12 shrink-0 rounded-[15px] flex items-center justify-center" style={{ background: 'var(--accent)' }}>
                     <motion.span
                       animate={{ rotate: [0, 12, -8, 0], scale: [1, 1.08, 1] }}
                       transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}

@@ -2,7 +2,7 @@ import { computeBudget } from '../../lib/planner';
 
 export const BUDGET_PARTS = [
   { id: 'stay', label: 'Stay', color: 'var(--accent)' },
-  { id: 'transport', label: 'Transport', color: 'var(--indigo)' },
+  { id: 'transport', label: 'Transport', color: 'var(--orange)' },
   { id: 'activities', label: 'Food & activities', color: 'var(--teal)' },
 ];
 

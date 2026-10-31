@@ -57,7 +57,7 @@ export default function TripHero({ trip, children }) {
           aria-hidden
           style={{
             background:
-              'radial-gradient(120% 90% at 0% 0%, var(--accent-soft) 0%, transparent 55%), radial-gradient(90% 80% at 100% 10%, var(--purple-soft) 0%, transparent 60%), var(--bg-grouped)',
+              'radial-gradient(120% 90% at 0% 0%, var(--accent-soft) 0%, transparent 55%), var(--bg-grouped)',
           }}
         />
       )}

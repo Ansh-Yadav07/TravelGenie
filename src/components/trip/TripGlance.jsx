@@ -5,7 +5,7 @@ import { cx, easeOut } from '../../lib/ui';
 
 const PARTS = [
   { id: 'stay', label: 'Stay', color: 'var(--accent)' },
-  { id: 'transport', label: 'Transport', color: 'var(--purple)' },
+  { id: 'transport', label: 'Transport', color: 'var(--orange)' },
   { id: 'activities', label: 'Activities & food', color: 'var(--teal)' },
 ];
 

@@ -14,7 +14,7 @@ const ICONS = { BedDouble, CalendarDays, Lock, MapPin, SlidersHorizontal, Wallet
 
 export default function Features() {
   return (
-    <section className="section" style={{ background: 'var(--bg-grouped)' }} aria-labelledby="features-title">
+    <section className="section surface-grouped" aria-labelledby="features-title">
       <div className="container-x">
         <SectionHeader
           eyebrow="Why TravelGenie"

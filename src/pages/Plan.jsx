@@ -45,7 +45,7 @@ export default function Plan() {
   const { editing, editMissing, initial } = useMemo(() => requestFromParams(params), [params]);
 
   return (
-    <div className="page-top pb-24 md:pb-32" style={{ background: 'var(--bg-grouped)' }}>
+    <div className="page-top pb-24 md:pb-32">
       <div className="container-x">
         <header className="mb-10 md:mb-12 max-w-[640px]">
           <h1 className="t-display">{editing ? 'Edit your trip' : 'Plan a trip'}</h1>

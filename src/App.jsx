@@ -75,6 +75,7 @@ export default function App() {
         <BrowserRouter>
           <ScrollToTop />
           <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[300] btn btn-primary btn-sm">Skip to content</a>
+          <div className="backdrop" aria-hidden="true" />
           <div className="min-h-screen flex flex-col">
             <Navbar />
             <main id="main" className="flex-1">

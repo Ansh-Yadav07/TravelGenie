@@ -80,55 +80,66 @@
   --nav-height: 52px;
   --content-max: 1120px;
 
+  /* Backdrop (see .backdrop) */
+  --backdrop-light: rgba(0, 0, 0, 0.035);
+  --grid-line: rgba(0, 0, 0, 0.045);
+  --card-sheen: none;
+
   color-scheme: light;
 }
 
 /* ── Dark ────────────────────────────────────────────────────────── */
+/* Neutral graphite rather than pure #000, so cards and shadows have
+   something to sit on. */
 :root[data-theme="dark"] {
-  --bg: #000000;
-  --bg-grouped: #000000;
-  --surface: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --material: rgba(22, 22, 23, 0.72);
-  --material-thick: rgba(28, 28, 30, 0.88);
+  --bg: #0b0b0c;
+  --bg-grouped: #111113;
+  --surface: #161618;
+  --surface-2: #1f1f22;
+  --surface-3: #2a2a2e;
+  --material: rgba(16, 16, 18, 0.72);
+  --material-thick: rgba(22, 22, 24, 0.88);
 
   --text: #f5f5f7;
   --text-2: #a1a1a6;
   --text-3: #86868b;
   --text-on-accent: #ffffff;
 
-  --fill: rgba(120, 120, 128, 0.24);
-  --fill-2: rgba(120, 120, 128, 0.32);
-  --fill-3: rgba(120, 120, 128, 0.4);
-  --separator: rgba(84, 84, 88, 0.45);
-  --separator-strong: rgba(84, 84, 88, 0.65);
+  --fill: rgba(118, 118, 128, 0.2);
+  --fill-2: rgba(118, 118, 128, 0.28);
+  --fill-3: rgba(118, 118, 128, 0.36);
+  --separator: rgba(255, 255, 255, 0.08);
+  --separator-strong: rgba(255, 255, 255, 0.15);
 
   --accent: #0a84ff;
   --accent-hover: #2190ff;
   --accent-pressed: #0077ed;
-  --accent-soft: rgba(10, 132, 255, 0.18);
-  --accent-text: #2997ff;
+  --accent-soft: rgba(10, 132, 255, 0.16);
+  --accent-text: #3d9dff;
   --green: #30d158;
   --green-text: #30d158;
-  --green-soft: rgba(48, 209, 88, 0.18);
+  --green-soft: rgba(48, 209, 88, 0.16);
   --orange: #ff9f0a;
-  --orange-text: #ff9f0a;
-  --orange-soft: rgba(255, 159, 10, 0.18);
+  --orange-text: #ffb340;
+  --orange-soft: rgba(255, 159, 10, 0.16);
   --red: #ff453a;
   --red-text: #ff6961;
-  --red-soft: rgba(255, 69, 58, 0.18);
+  --red-soft: rgba(255, 69, 58, 0.16);
   --yellow: #ffd60a;
   --purple: #bf5af2;
-  --purple-soft: rgba(191, 90, 242, 0.18);
+  --purple-soft: rgba(191, 90, 242, 0.16);
   --teal: #40c8e0;
   --pink: #ff375f;
   --indigo: #5e5ce6;
 
-  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 56px -12px rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 28px 60px -18px rgba(0, 0, 0, 0.85);
   --ring: 0 0 0 4px rgba(10, 132, 255, 0.35);
+
+  --backdrop-light: rgba(255, 255, 255, 0.05);
+  --grid-line: rgba(255, 255, 255, 0.045);
+  --card-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 40%);
 
   color-scheme: dark;
 }
@@ -219,14 +230,6 @@
   .t-tertiary  { color: var(--text-3); }
   .tabular     { font-variant-numeric: tabular-nums; }
 
-  /* Brand gradient text — used once per page at most */
-  .t-gradient {
-    background: linear-gradient(100deg, #0a84ff 0%, #5e5ce6 45%, #bf5af2 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
   /* ── Layout ── */
   .container-x {
     width: 100%;
@@ -241,14 +244,18 @@
 
   /* ── Surfaces ── */
   .card {
-    background: var(--surface);
+    background: var(--card-sheen), var(--surface);
     border-radius: var(--radius);
     box-shadow: var(--shadow-md);
   }
   .card-flat {
-    background: var(--surface);
+    background: var(--card-sheen), var(--surface);
     border-radius: var(--radius);
     border: 1px solid var(--separator);
+  }
+  /* Grouped band that lets the backdrop show through */
+  .surface-grouped {
+    background: color-mix(in srgb, var(--bg-grouped) 78%, transparent);
   }
   .card-inset {
     background: var(--surface-2);
@@ -412,6 +419,33 @@
 @keyframes tg-spin { to { transform: rotate(360deg); } }
 .animate-spin-smooth { animation: tg-spin 0.9s linear infinite; }
 
+
+/* ── Backdrop ───────────────────────────────────────────────────── */
+/* Fixed behind every page: a soft neutral light from the top and a
+   fine architectural grid that fades out. Monochrome on purpose — the
+   photography and the one accent colour carry the colour. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(80% 55% at 50% -10%, var(--backdrop-light), transparent 70%),
+    var(--bg);
+}
+.backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: center top;
+  -webkit-mask-image: radial-gradient(75% 55% at 50% 0%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(75% 55% at 50% 0%, #000 20%, transparent 80%);
+}
+
 /* Theme switch should not animate every element */
 .theme-transition, .theme-transition * {
   transition: background-color 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease) !important;
@@ -422,6 +456,7 @@
   :root { color-scheme: light; }
   .no-print { display: none !important; }
   body { background: #fff; color: #000; font-size: 12pt; }
+  .backdrop { display: none; }
   .card, .card-flat { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
   a { color: inherit; text-decoration: none; }
   .page-top { padding-top: 0 !important; }
