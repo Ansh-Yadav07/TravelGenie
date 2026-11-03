@@ -16,12 +16,17 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 PlanMode = Literal["days", "hours"]
 Companions = Literal["solo", "couple", "friends", "family"]
 BudgetTier = Literal["budget", "moderate", "luxury", "ultra"]
+BudgetBasis = Literal["total", "per_person"]
+BudgetPriority = Literal["balanced", "stay", "experiences", "transport"]
+StayType = Literal["any", "hostel", "homestay", "hotel", "boutique", "resort"]
+FoodPreference = Literal["any", "vegetarian", "vegan", "jain", "non_vegetarian"]
 Mood = Literal["relaxing", "adventure", "romantic", "cultural", "party"]
 Pace = Literal["relaxed", "balanced", "packed"]
 TransportPref = Literal["flight", "train", "bus", "car"]
 Interest = Literal[
     "beaches", "mountains", "history", "food", "nightlife",
     "shopping", "nature", "art", "wellness", "adventure-sports",
+    "spiritual", "wildlife", "photography", "offbeat",
 ]
 Vibe = Literal["chill", "active", "party", "heritage", "romance", "balanced"]
 TransportMode = Literal["flight", "train", "bus", "car", "cab", "metro", "scooter", "auto", "ferry", "walk", "other"]
@@ -38,6 +43,8 @@ CATEGORIES: tuple[str, ...] = Category.__args__  # type: ignore[attr-defined]
 
 DURATION_LIMITS = {"days": (1, 14), "hours": (2, 12)}
 MAX_INTERESTS = 5
+CUSTOM_BUDGET_LIMITS = (500, 5_000_000)
+MAX_NOTES = 300
 
 PlaceName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
 
@@ -61,8 +68,15 @@ class PlanRequest(BaseModel):
     pace: Pace = "balanced"
     transport: TransportPref = "flight"
     interests: list[Interest] = Field(default_factory=list, max_length=MAX_INTERESTS)
+    # The traveller's own budget. When set it replaces the tier's total; `budget` is then ignored.
+    custom_budget: int | None = Field(default=None, ge=CUSTOM_BUDGET_LIMITS[0], le=CUSTOM_BUDGET_LIMITS[1])
+    custom_budget_basis: BudgetBasis = "total"
+    budget_priority: BudgetPriority = "balanced"
+    stay_type: StayType = "any"
+    food: FoodPreference = "any"
+    notes: Annotated[str, StringConstraints(max_length=MAX_NOTES)] | None = None
 
-    @field_validator("origin", "start_date", mode="before")
+    @field_validator("origin", "start_date", "notes", mode="before")
     @classmethod
     def _blank_to_none(cls, value: Any) -> Any:
         if isinstance(value, str) and not value.strip():
@@ -93,6 +107,13 @@ class PlanRequest(BaseModel):
     @property
     def has_origin(self) -> bool:
         return bool(self.origin)
+
+    @property
+    def custom_total(self) -> int | None:
+        """The custom budget for the whole group, or None when a tier is used."""
+        if self.custom_budget is None:
+            return None
+        return self.custom_budget * (self.travelers if self.custom_budget_basis == "per_person" else 1)
 
     @property
     def total_days(self) -> int:
@@ -128,8 +149,15 @@ class Estimate(BaseModel):
     total: int
 
 
+class TrimmedActivity(BaseModel):
+    day: int
+    title: str
+    cost: int
+
+
 class Budget(BaseModel):
-    tier: BudgetTier
+    tier: BudgetTier | Literal["custom"]
+    style: BudgetTier
     travelers: int
     nights: int
     rooms: int
@@ -138,6 +166,7 @@ class Budget(BaseModel):
     estimate: Estimate
     status: Literal["within", "over"]
     delta: int
+    trimmed: list[TrimmedActivity] = Field(default_factory=list)  # left out to honour a custom budget
 
 
 class Stay(BaseModel):
@@ -192,6 +221,7 @@ class Trip(BaseModel):
     transport: list[TransportOption]
     days: list[Day]
     tips: list[str]
+    packing: list[str] = Field(default_factory=list)
 
 
 class ErrorBody(BaseModel):
@@ -286,4 +316,5 @@ RAW_PLAN_SCHEMA: dict[str, Any] = _obj({
         "activities": _arr(RAW_ACTIVITY_SCHEMA),
     })),
     "tips": _arr(_str("A practical, specific local tip")),
+    "packing": _arr(_str("One thing worth packing for this trip, under 40 characters")),
 })

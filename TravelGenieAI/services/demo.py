@@ -143,7 +143,7 @@ def build_raw_plan(req: PlanRequest, budget: BudgetPlan) -> dict[str, Any]:
     destination = sanitize(req.destination) or "your destination"
     origin = sanitize(req.origin) if req.origin else ""
     goa = _is_goa(destination)
-    scale = PRICE_SCALE.get(req.budget, 1.0)
+    scale = PRICE_SCALE.get(budget.style, 1.0)
     travelers = req.travelers
     pool = GOA_DAYS if goa else GENERIC_DAYS
     limit = PACE_LIMIT[req.pace]
@@ -182,7 +182,7 @@ def build_raw_plan(req: PlanRequest, budget: BudgetPlan) -> dict[str, Any]:
                              "category": "transit", "cost": 0, "duration_minutes": 60, "maps_query": ""})
             days.append({"title": title, "activities": acts})
 
-    room = TIERS[req.budget]["room_per_night"]
+    room = TIERS[budget.style]["room_per_night"]
     if goa:
         ordered = sorted(GOA_STAY_LIST, key=lambda s: abs(GOA_STAY_PRICES[s[0]] - room))[:3]
         stays_src = sorted(ordered, key=lambda s: GOA_STAY_PRICES[s[0]])
@@ -220,6 +220,7 @@ def build_raw_plan(req: PlanRequest, budget: BudgetPlan) -> dict[str, Any]:
         "transport": transport,
         "days": days,
         "tips": tips,
+        "packing": ["Sunscreen", "Comfortable walking shoes", "Refillable water bottle", "Light rain jacket", "Power bank", "ID for hotel check-in"],
     }
 
 

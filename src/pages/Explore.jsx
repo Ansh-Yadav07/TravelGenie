@@ -1,15 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, SearchX, Sparkles } from 'lucide-react';
 
 import { Button, EmptyState, Reveal, SegmentedControl } from '../components/ui';
 import DestinationCard from '../components/explore/DestinationCard';
 import { ChipFilter, SearchField } from '../components/explore/FilterBar';
 import { interestsIn, matchesQuery, parseList, planLink } from '../components/explore/helpers';
-import { destinations } from '../data/destinations';
+import { destinations, getDestination } from '../data/destinations';
 import { pluralize } from '../lib/format';
-import { easeOut } from '../lib/ui';
+import PageHero from '../components/layout/PageHero';
 
 const INTEREST_OPTIONS = interestsIn(destinations);
 const INTEREST_IDS = INTEREST_OPTIONS.map((i) => i.id);
@@ -18,8 +17,9 @@ const SORTS = [
   { id: 'price', label: 'Price' },
 ];
 
+const HERO_IMAGE = getDestination('ladakh')?.image || '';
+
 export default function Explore() {
-  const reduce = useReducedMotion();
   const [params, setParams] = useSearchParams();
   const query = params.get('q') ?? '';
   const interests = useMemo(() => parseList(params.get('interests'), INTEREST_IDS), [params]);
@@ -54,22 +54,13 @@ export default function Explore() {
   const filtered = Boolean(trimmed) || interests.length > 0;
 
   return (
-    <div className="page-top pb-24">
-      <header className="container-x pt-4 md:pt-10">
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: easeOut }}
-          className="max-w-[760px]"
-        >
-          <p className="t-eyebrow mb-3">Explore</p>
-          <h1 className="t-display">Explore India.</h1>
-          <p className="mt-4 text-[19px] md:text-[21px] leading-[1.4] tracking-[-0.015em] t-secondary">
-            Hand-picked places we love, from Himalayan passes to coral islands. Open one for highlights and the best
-            time to go — or plan a trip anywhere in a tap.
-          </p>
-        </motion.div>
-      </header>
+    <div className="pb-24">
+      <PageHero
+        image={HERO_IMAGE}
+        eyebrow="Explore"
+        title="From Himalayan passes to coral islands."
+        subtitle="Hand-picked places we love. Open one for highlights and the best time to go, or plan a trip there in a tap."
+      />
 
       {/* Filters */}
       <section aria-label="Filter destinations" className="container-x mt-10 md:mt-14">

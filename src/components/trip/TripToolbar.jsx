@@ -1,4 +1,4 @@
-import { HardDrive, Printer, RefreshCw, Share, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { CalendarPlus, HardDrive, Printer, RefreshCw, Share, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { Button } from '../ui';
 import { cx } from '../../lib/ui';
 import ConfirmPopover from './ConfirmPopover';
@@ -6,7 +6,7 @@ import ConfirmPopover from './ConfirmPopover';
 const iconBtn = 'btn btn-secondary btn-icon w-11 min-h-11';
 
 /** Trip actions. Hidden in print. */
-export default function TripToolbar({ onAdjust, onRegenerate, onShare, onPrint, onDelete, busy }) {
+export default function TripToolbar({ onAdjust, onRegenerate, onShare, onCalendar, onPrint, onDelete, busy }) {
   return (
     <div className="no-print">
       <div className="container-x flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-4">
@@ -26,6 +26,11 @@ export default function TripToolbar({ onAdjust, onRegenerate, onShare, onPrint, 
           <button type="button" onClick={onShare} className={iconBtn} aria-label="Share itinerary" title="Share">
             <Share size={18} strokeWidth={2} aria-hidden />
           </button>
+          {onCalendar && (
+            <button type="button" onClick={onCalendar} className={iconBtn} aria-label="Add to calendar" title="Add to calendar">
+              <CalendarPlus size={18} strokeWidth={2} aria-hidden />
+            </button>
+          )}
           <button type="button" onClick={onPrint} className={iconBtn} aria-label="Print or save as PDF" title="Print or save as PDF">
             <Printer size={18} strokeWidth={2} aria-hidden />
           </button>

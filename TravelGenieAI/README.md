@@ -73,6 +73,10 @@ All money is INR, as integers, and covers the **whole group**. The base path is 
 }
 ```
 
+Optional preferences: `custom_budget` (INR, 500–5,000,000; replaces the tier's total), `custom_budget_basis` (`total` | `per_person`), `budget_priority` (`balanced` | `stay` | `experiences` | `transport`), `stay_type` (`any` | `hostel` | `homestay` | `hotel` | `boutique` | `resort`), `food` (`any` | `vegetarian` | `vegan` | `jain` | `non_vegetarian`) and `notes` (free text, up to 300 characters).
+
+With `custom_budget`, `budget.tier` is `"custom"`, the total equals the traveller's figure exactly, and `budget.style` names the tier closest to it. The split follows that tier's proportions, with the priority's share boosted 1.5×. Trips also return `packing`, a list of things to pack (empty in hours mode).
+
 Omitted optional fields fall back to these defaults: `plan_mode` `days`, `duration` 3, `travelers` 2, `companions` `couple`, `budget` `moderate`, `mood` `relaxing`, `pace` `balanced`, `transport` `flight`, `interests` `[]`. Empty strings for `origin` and `start_date` become `null`. Unknown fields are ignored.
 
 ### Response: `Trip`

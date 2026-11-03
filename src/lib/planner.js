@@ -26,6 +26,40 @@ export const BUDGETS = [
   { id: 'ultra', label: 'Ultra', description: 'Palaces, suites and once-in-a-lifetime' },
 ];
 
+export const CUSTOM_BUDGET_ID = 'custom';
+export const CUSTOM_BUDGET_LIMITS = { min: 500, max: 5000000 };
+
+export const BUDGET_BASES = [
+  { id: 'total', label: 'Whole trip' },
+  { id: 'per_person', label: 'Per person' },
+];
+
+export const BUDGET_PRIORITIES = [
+  { id: 'balanced', label: 'Balanced', description: 'An even split across the trip' },
+  { id: 'stay', label: 'Stay', description: 'A nicer place to sleep comes first' },
+  { id: 'experiences', label: 'Experiences', description: 'More for food and activities, a simpler stay' },
+  { id: 'transport', label: 'Travel', description: 'Faster, more comfortable journeys come first' },
+];
+
+export const STAY_TYPES = [
+  { id: 'any', label: 'No preference' },
+  { id: 'hostel', label: 'Hostel' },
+  { id: 'homestay', label: 'Homestay' },
+  { id: 'hotel', label: 'Hotel' },
+  { id: 'boutique', label: 'Boutique' },
+  { id: 'resort', label: 'Resort' },
+];
+
+export const FOOD_PREFERENCES = [
+  { id: 'any', label: 'Anything' },
+  { id: 'vegetarian', label: 'Vegetarian' },
+  { id: 'vegan', label: 'Vegan' },
+  { id: 'jain', label: 'Jain' },
+  { id: 'non_vegetarian', label: 'Non-veg lover' },
+];
+
+export const MAX_NOTES = 300;
+
 export const MOODS = [
   { id: 'relaxing', label: 'Relaxing', icon: 'Sun' },
   { id: 'adventure', label: 'Adventure', icon: 'Mountain' },
@@ -58,6 +92,10 @@ export const INTERESTS = [
   { id: 'art', label: 'Art & design' },
   { id: 'wellness', label: 'Wellness' },
   { id: 'adventure-sports', label: 'Adventure sports' },
+  { id: 'spiritual', label: 'Spiritual' },
+  { id: 'wildlife', label: 'Wildlife' },
+  { id: 'photography', label: 'Photography' },
+  { id: 'offbeat', label: 'Offbeat' },
 ];
 
 export const MAX_INTERESTS = 5;
@@ -67,10 +105,10 @@ export const CATEGORIES = {
   food: { label: 'Food & drink', icon: 'UtensilsCrossed', color: 'var(--orange)' },
   sight: { label: 'Sightseeing', icon: 'Camera', color: 'var(--accent)' },
   nature: { label: 'Nature', icon: 'Trees', color: 'var(--green)' },
-  culture: { label: 'Culture', icon: 'Landmark', color: 'var(--purple)' },
+  culture: { label: 'Culture', icon: 'Landmark', color: 'var(--gold)' },
   adventure: { label: 'Adventure', icon: 'Mountain', color: 'var(--teal)' },
   shopping: { label: 'Shopping', icon: 'ShoppingBag', color: 'var(--pink)' },
-  nightlife: { label: 'Nightlife', icon: 'Music', color: 'var(--indigo)' },
+  nightlife: { label: 'Nightlife', icon: 'Music', color: 'var(--pink)' },
   wellness: { label: 'Wellness', icon: 'Flower2', color: 'var(--green)' },
   transit: { label: 'Getting around', icon: 'Navigation', color: 'var(--text-3)' },
   stay: { label: 'Stay', icon: 'BedDouble', color: 'var(--text-3)' },
@@ -90,6 +128,12 @@ export const DEFAULT_REQUEST = {
   pace: 'balanced',
   transport: 'flight',
   interests: [],
+  custom_budget: null,
+  custom_budget_basis: 'total',
+  budget_priority: 'balanced',
+  stay_type: 'any',
+  food: 'any',
+  notes: '',
 };
 
 /* ── Budget model (mirror of services/budget.py) ───────────────────── */
@@ -103,12 +147,17 @@ export const BUDGET_TIERS = {
 
 const round100 = (n) => Math.round(n / 100) * 100;
 
-/**
- * Deterministic budget for a request. Returns INR totals for the whole group.
- * @returns {{total:number, nights:number, rooms:number, allocation:{stay:number, transport:number, activities:number}}}
- */
-export function computeBudget(req) {
-  const tier = BUDGET_TIERS[req.budget] || BUDGET_TIERS.moderate;
+const PRIORITY_WEIGHTS = {
+  balanced: {},
+  stay: { stay: 1.5 },
+  experiences: { activities: 1.5 },
+  transport: { transport: 1.5 },
+};
+
+const TIGHT_RATIO = 0.7;
+
+function tierBudget(req, tierId) {
+  const tier = BUDGET_TIERS[tierId] || BUDGET_TIERS.moderate;
   const travelers = clamp(Number(req.travelers) || 1, 1, 12);
   const duration = Number(req.duration) || 1;
   const hasOrigin = Boolean(req.origin && req.origin.trim());
@@ -117,7 +166,7 @@ export function computeBudget(req) {
     const share = Math.min(1, duration / 8);
     const activities = round100(travelers * tier.daily_per_person * share);
     const transport = round100(travelers * tier.daily_per_person * 0.25 * share);
-    return { total: activities + transport, nights: 0, rooms: 0, allocation: { stay: 0, transport, activities } };
+    return { tier: tierId, style: tierId, tight: false, total: activities + transport, nights: 0, rooms: 0, allocation: { stay: 0, transport, activities } };
   }
 
   const nights = Math.max(1, duration - 1);
@@ -127,7 +176,42 @@ export function computeBudget(req) {
   const transport = hasOrigin
     ? round100(travelers * tier.intercity_per_person)
     : round100(travelers * duration * tier.daily_per_person * 0.25);
-  return { total: stay + transport + activities, nights, rooms, allocation: { stay, transport, activities } };
+  return { tier: tierId, style: tierId, tight: false, total: stay + transport + activities, nights, rooms, allocation: { stay, transport, activities } };
+}
+
+/** The custom budget for the whole group, or null when a tier is used. */
+export function customTotal(req) {
+  const amount = Number(req.custom_budget);
+  if (req.custom_budget == null || !Number.isFinite(amount) || amount <= 0) return null;
+  return req.custom_budget_basis === 'per_person' ? amount * clamp(Number(req.travelers) || 1, 1, 12) : amount;
+}
+
+/**
+ * Deterministic budget for a request. Returns INR totals for the whole group.
+ * @returns {{tier:string, style:string, tight:boolean, total:number, nights:number, rooms:number, allocation:{stay:number, transport:number, activities:number}}}
+ */
+export function computeBudget(req) {
+  const total = customTotal(req);
+  if (total == null) return tierBudget(req, req.budget);
+
+  // Split the traveller's own total the way the nearest tier would, then apply their priority.
+  const distance = (t) => Math.abs(Math.log(total / tierBudget(req, t).total));
+  const style = Object.keys(BUDGET_TIERS).reduce((best, t) => (distance(t) < distance(best) ? t : best));
+  const reference = tierBudget(req, style);
+  const boost = PRIORITY_WEIGHTS[req.budget_priority] || {};
+  const weight = (part) => reference.allocation[part] * (boost[part] ?? 1);
+  const scale = total / (weight('stay') + weight('transport') + weight('activities'));
+  const stay = round100(weight('stay') * scale);
+  const transport = round100(weight('transport') * scale);
+  return {
+    tier: CUSTOM_BUDGET_ID,
+    style,
+    tight: total < tierBudget(req, 'budget').total * TIGHT_RATIO,
+    total,
+    nights: reference.nights,
+    rooms: reference.rooms,
+    allocation: { stay, transport, activities: Math.max(0, total - stay - transport) },
+  };
 }
 
 /* ── Validation ────────────────────────────────────────────────────── */
@@ -164,6 +248,13 @@ export function validateRequest(req) {
     if (Number.isNaN(start.getTime())) errors.start_date = 'Enter a valid date.';
     else if (start < today) errors.start_date = 'Pick a date from today onwards.';
   }
+  if (req.custom_budget != null) {
+    const { min, max } = CUSTOM_BUDGET_LIMITS;
+    const amount = Number(req.custom_budget);
+    if (!Number.isInteger(amount) || amount < min) errors.custom_budget = 'Enter at least ₹500.';
+    else if (amount > max) errors.custom_budget = 'Enter ₹50,00,000 or less.';
+  }
+  if ((req.notes || '').length > MAX_NOTES) errors.notes = `Keep this under ${MAX_NOTES} characters.`;
   return errors;
 }
 
@@ -187,13 +278,19 @@ export function normalizeRequest(input = {}) {
     interests: (Array.isArray(req.interests) ? req.interests : [])
       .filter((id) => INTERESTS.some((o) => o.id === id))
       .slice(0, MAX_INTERESTS),
+    custom_budget: Number.isFinite(parseInt(req.custom_budget, 10)) ? parseInt(req.custom_budget, 10) : null,
+    custom_budget_basis: pick(BUDGET_BASES, req.custom_budget_basis, DEFAULT_REQUEST.custom_budget_basis),
+    budget_priority: pick(BUDGET_PRIORITIES, req.budget_priority, DEFAULT_REQUEST.budget_priority),
+    stay_type: pick(STAY_TYPES, req.stay_type, DEFAULT_REQUEST.stay_type),
+    food: pick(FOOD_PREFERENCES, req.food, DEFAULT_REQUEST.food),
+    notes: String(req.notes || '').slice(0, MAX_NOTES),
   };
 }
 
 /** Request payload for the API (empty optional strings become null). */
 export function toApiPayload(req) {
   const n = normalizeRequest(req);
-  return { ...n, origin: n.origin || null, start_date: n.start_date || null };
+  return { ...n, origin: n.origin || null, start_date: n.start_date || null, notes: n.notes.trim() || null };
 }
 
 export const labelOf = (list, id) => list.find((o) => o.id === id)?.label ?? id;

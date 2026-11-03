@@ -9,8 +9,8 @@ import TripToolbar from '../components/trip/TripToolbar';
 import TripGlance from '../components/trip/TripGlance';
 import Itinerary from '../components/trip/Itinerary';
 import AdjustSheet from '../components/trip/AdjustSheet';
-import { GeneratedNote, StaysPanel, TipsPanel, TransportPanel } from '../components/trip/TripSidebar';
-import { normalizeTrip, tripToText } from '../components/trip/tripModel';
+import { GeneratedNote, PackingPanel, StaysPanel, TipsPanel, TransportPanel } from '../components/trip/TripSidebar';
+import { normalizeTrip, tripToIcs, tripToText } from '../components/trip/tripModel';
 import useTripGeneration from '../hooks/useTripGeneration';
 import { deleteTrip, getTrip, subscribeTrips } from '../lib/storage';
 
@@ -102,6 +102,16 @@ export default function TripResult() {
     }
   };
 
+  const onCalendar = () => {
+    const url = URL.createObjectURL(new Blob([tripToIcs(trip)], { type: 'text/calendar;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${(trip.request.destination || 'trip').replace(/[^\w-]+/g, '-').toLowerCase()}-itinerary.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast('Calendar file downloaded', { tone: 'success' });
+  };
+
   const onDelete = () => {
     setDeleted(trip);
     deleteTrip(trip.id);
@@ -116,6 +126,7 @@ export default function TripResult() {
         onAdjust={openAdjust}
         onRegenerate={onRegenerate}
         onShare={onShare}
+        onCalendar={trip.request.start_date ? onCalendar : undefined}
         onPrint={() => window.print()}
         onDelete={onDelete}
         busy={gen.status === 'running'}
@@ -134,6 +145,7 @@ export default function TripResult() {
             <StaysPanel trip={trip} />
             <TransportPanel trip={trip} />
             <TipsPanel trip={trip} />
+            <PackingPanel trip={trip} />
             <GeneratedNote trip={trip} />
           </aside>
         </div>

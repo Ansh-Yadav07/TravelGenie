@@ -51,6 +51,7 @@ export function saveTrip(trip) {
 
 export function deleteTrip(id) {
   write(TRIPS_KEY, listTrips().filter((t) => t.id !== id));
+  try { localStorage.removeItem(packedKey(id)); } catch { /* storage unavailable */ }
   window.dispatchEvent(new Event(EVENT));
 }
 
@@ -68,6 +69,18 @@ export function subscribeTrips(callback) {
     window.removeEventListener(EVENT, callback);
     window.removeEventListener('storage', onStorage);
   };
+}
+
+const packedKey = (id) => `tg:packed:${id}`;
+
+/** Packing-list items ticked off for a trip. */
+export function getPackedItems(id) {
+  const items = read(packedKey(id), []);
+  return Array.isArray(items) ? items : [];
+}
+
+export function setPackedItems(id, items) {
+  write(packedKey(id), items);
 }
 
 export function getLastRequest() {

@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion, useReducedMotion } from 'framer-motion';
 import { BedDouble } from 'lucide-react';
 
 import { Button, EmptyState, Reveal } from '../components/ui';
@@ -8,15 +7,16 @@ import StayCard from '../components/explore/StayCard';
 import { ChipFilter } from '../components/explore/FilterBar';
 import { STAY_SETTINGS, parseList, settingOf } from '../components/explore/helpers';
 import { stays } from '../data/stays';
-import { getDestination } from '../data/destinations';
 import { pluralize } from '../lib/format';
-import { easeOut } from '../lib/ui';
+import PageHero from '../components/layout/PageHero';
+import { getDestination } from '../data/destinations';
 
 const SETTING_OPTIONS = STAY_SETTINGS.filter((s) => stays.some((st) => settingOf(st) === s.id));
 const SETTING_IDS = SETTING_OPTIONS.map((s) => s.id);
 
+const HERO_IMAGE = getDestination('kerala')?.image || '';
+
 export default function Stays() {
-  const reduce = useReducedMotion();
   const [params, setParams] = useSearchParams();
   const selected = useMemo(() => parseList(params.get('type'), SETTING_IDS), [params]);
 
@@ -36,22 +36,13 @@ export default function Stays() {
   );
 
   return (
-    <div className="page-top pb-24">
-      <header className="container-x pt-4 md:pt-10">
-        <motion.div
-          initial={reduce ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: easeOut }}
-          className="max-w-[760px]"
-        >
-          <p className="t-eyebrow mb-3">Stays</p>
-          <h1 className="t-display">Places worth the night.</h1>
-          <p className="mt-4 text-[19px] md:text-[21px] leading-[1.4] tracking-[-0.015em] t-secondary">
-            A short list of India’s most memorable hotels — lake palaces, backwater resorts and Himalayan retreats.
-            Every trip TravelGenie plans also suggests stays to match your budget.
-          </p>
-        </motion.div>
-      </header>
+    <div className="pb-24">
+      <PageHero
+        image={HERO_IMAGE}
+        eyebrow="Stays"
+        title="Places worth the night."
+        subtitle="Lake palaces, backwater resorts and Himalayan retreats. Every trip we plan also suggests stays to match your budget."
+      />
 
       <section aria-label="Filter stays" className="container-x mt-10 md:mt-14">
         <ChipFilter

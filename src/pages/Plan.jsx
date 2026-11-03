@@ -2,7 +2,9 @@ import { useMemo } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Check, Info } from 'lucide-react';
 import PlannerForm from '../components/home/PlannerForm';
+import PageHero from '../components/layout/PageHero';
 import { getTrip } from '../lib/storage';
+import { findDestinationByName, getDestination } from '../data/destinations';
 
 const WHAT_YOU_GET = [
   'A day-by-day plan with real, named places',
@@ -10,6 +12,8 @@ const WHAT_YOU_GET = [
   'Ways to get there and around, with costs',
   'Google Maps links and local tips',
 ];
+
+const heroImage = (name) => (name && findDestinationByName(name)?.image) || getDestination('varanasi')?.image || '';
 
 const int = (v) => {
   const n = parseInt(v, 10);
@@ -34,6 +38,7 @@ function requestFromParams(params) {
     if (travelers === 1) initial.companions = 'solo';
     else if (travelers === 2) initial.companions = 'couple';
   }
+  if (params.get('companions')) initial.companions = params.get('companions');
   if (params.get('budget')) initial.budget = params.get('budget');
   if (params.get('mood')) initial.mood = params.get('mood');
   return { editing: null, editMissing: false, initial };
@@ -45,22 +50,22 @@ export default function Plan() {
   const { editing, editMissing, initial } = useMemo(() => requestFromParams(params), [params]);
 
   return (
-    <div className="page-top pb-24 md:pb-32">
-      <div className="container-x">
-        <header className="mb-10 md:mb-12 max-w-[640px]">
-          <h1 className="t-display">{editing ? 'Edit your trip' : 'Plan a trip'}</h1>
-          <p className="t-body t-secondary mt-3">
-            {editing
-              ? `Change anything and Gemini will plan ${editing.destination || 'it'} again. Your original plan stays saved.`
-              : 'Tell us the basics and the style you like. Gemini builds a day-by-day plan with real places, stays and costs.'}
-          </p>
+    <div className="pb-24 md:pb-32">
+      <PageHero
+        image={heroImage(initial?.destination || editing?.destination)}
+        eyebrow={editing ? 'Edit' : 'Plan'}
+        title={editing ? `Change your ${editing.destination || ''} trip`.replace('  ', ' ') : initial?.destination ? `Let’s plan ${initial.destination}.` : 'Where are we going?'}
+        subtitle={editing
+          ? 'Change anything and we’ll plan it again. Your original plan stays saved.'
+          : 'Tell us the basics and how you like to travel. We’ll build a day-by-day plan with real places, stays and costs.'}
+      />
+      <div className="container-x pt-10 md:pt-12">
           {editMissing && (
-            <p className="mt-4 inline-flex items-start gap-2 t-subhead rounded-[12px] px-3.5 py-2.5" style={{ background: 'var(--orange-soft)', color: 'var(--orange-text)' }}>
+            <p className="mb-8 inline-flex items-start gap-2 t-subhead rounded-[12px] px-3.5 py-2.5" style={{ background: 'var(--orange-soft)', color: 'var(--orange-text)' }}>
               <Info size={17} strokeWidth={2} aria-hidden className="mt-0.5 shrink-0" />
               That trip isn’t saved on this device any more, so we’ve started a new plan.
             </p>
           )}
-        </header>
 
         <PlannerForm
           key={search}

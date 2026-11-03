@@ -86,3 +86,12 @@ export function pluralize(n, word, plural = `${word}s`) {
 export function slugify(s) {
   return String(s || '').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_-]+/g, '-');
 }
+
+/** Google Maps directions through a day's stops, in order. Null when there is no route to follow. */
+export function dayRouteUrl(stops) {
+  const list = stops.filter(Boolean).slice(0, 10); // Maps accepts about 8 waypoints between the ends
+  if (list.length < 2) return null;
+  const params = new URLSearchParams({ api: '1', origin: list[0], destination: list[list.length - 1] });
+  if (list.length > 2) params.set('waypoints', list.slice(1, -1).join('|'));
+  return `https://www.google.com/maps/dir/?${params}`;
+}

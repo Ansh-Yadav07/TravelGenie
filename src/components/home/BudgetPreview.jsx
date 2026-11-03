@@ -1,4 +1,4 @@
-import { labelOf, BUDGETS } from '../../lib/planner';
+import { labelOf, BUDGETS, CUSTOM_BUDGET_ID } from '../../lib/planner';
 import { describeBudget } from './budget';
 import { formatINR, pluralize } from '../../lib/format';
 import { cx } from '../../lib/ui';
@@ -25,12 +25,13 @@ export function BudgetBar({ parts, total, className }) {
  */
 export default function BudgetPreview({ request, variant = 'inline', className }) {
   const b = describeBudget(request);
-  const summary = `Estimated ${formatINR(b.total)} total, ${formatINR(b.perPerson)} per person`;
+  const summary = `Budget ${formatINR(b.total)} total, ${formatINR(b.perPerson)} per person`;
+  const custom = b.tier === CUSTOM_BUDGET_ID;
 
   if (variant === 'full') {
     return (
       <div className={className}>
-        <p className="t-footnote t-secondary">Estimated budget · {labelOf(BUDGETS, request.budget)}</p>
+        <p className="t-footnote t-secondary">{custom ? 'Your budget' : `Estimated budget · ${labelOf(BUDGETS, request.budget)}`}</p>
         <p className="mt-1 flex items-baseline gap-2 flex-wrap" aria-live="polite" aria-label={summary}>
           <span className="t-title-1 tabular">{formatINR(b.total)}</span>
           {b.travelers > 1 && <span className="t-subhead t-secondary tabular">{formatINR(b.perPerson)} per person</span>}
@@ -51,7 +52,7 @@ export default function BudgetPreview({ request, variant = 'inline', className }
           {request.plan_mode === 'hours'
             ? `For ${pluralize(b.travelers, 'traveler')} over ${pluralize(request.duration, 'hour')}. No stay needed.`
             : `For ${pluralize(b.travelers, 'traveler')}, ${pluralize(b.nights, 'night')} in ${pluralize(b.rooms, 'room')}.`}{' '}
-          Gemini plans within this total and flags anything over it.
+          {custom ? 'Gemini treats this as your limit and flags anything over it.' : 'Gemini plans within this total and flags anything over it.'}
         </p>
       </div>
     );

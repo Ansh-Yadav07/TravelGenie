@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Calculator, HardDrive, MessageSquareText, ShieldCheck, Sparkles, Ticket, UserX } from 'lucide-react';
 
 import { Button, ChevronLink, Reveal, SmartImage } from '../components/ui';
 import { getDestination } from '../data/destinations';
-import { easeOut } from '../lib/ui';
+import PageHero from '../components/layout/PageHero';
 
 const STEPS = [
   {
@@ -61,40 +60,17 @@ const initials = (name) => {
 const STORY_IMAGE = getDestination('udaipur')?.image || '';
 
 export default function About() {
-  const reduce = useReducedMotion();
   useEffect(() => { document.title = 'About · TravelGenie'; }, []);
 
   return (
     <div className="pb-8">
       {/* Intro */}
-      <header className="page-top container-x text-center">
-        <motion.div
-          className="pt-6 md:pt-16 max-w-[820px] mx-auto"
-          initial={reduce ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: easeOut }}
-        >
-          <p className="t-eyebrow mb-4">About TravelGenie</p>
-          <h1 className="t-hero">
-            A travel planner
-            <br />
-            <span className="t-secondary">that respects you.</span>
-          </h1>
-          <p className="mt-6 mx-auto max-w-[640px] text-[19px] md:text-[21px] leading-[1.45] tracking-[-0.015em] t-secondary">
-            TravelGenie turns a few choices into a complete trip across India — days, places, stays, transport and a
-            budget you can actually follow. It’s free, it doesn’t need an account, and it never books anything behind
-            your back.
-          </p>
-        </motion.div>
-      </header>
-
-      <div className="mx-auto max-w-[1440px] px-3 md:px-4 mt-14 md:mt-20">
-        <SmartImage
-          src={STORY_IMAGE ? STORY_IMAGE.replace(/([?&])w=\d+/, '$1w=2000') : ''}
-          alt="The City Palace on Lake Pichola, Udaipur"
-          className="rounded-[28px] h-[44vh] min-h-[280px] max-h-[560px]"
-        />
-      </div>
+      <PageHero
+        image={STORY_IMAGE}
+        eyebrow="About TravelGenie"
+        title="A travel planner that respects you."
+        subtitle="A few choices become a complete trip across India: days, places, stays, transport and a budget you can follow. It’s free, needs no account and never books anything behind your back."
+      />
 
       {/* How it works */}
       <section className="section container-x" aria-labelledby="how-title">

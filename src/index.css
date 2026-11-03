@@ -11,58 +11,59 @@
 /* ── Light (default) ─────────────────────────────────────────────── */
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Backgrounds */
-  --bg: #ffffff;                 /* systemBackground */
-  --bg-grouped: #f5f5f7;         /* apple.com section gray */
-  --surface: #ffffff;            /* cards on grouped bg */
-  --surface-2: #f5f5f7;          /* inset / secondary surface */
-  --surface-3: #e8e8ed;          /* pressed / tertiary */
-  --material: rgba(255, 255, 255, 0.72);       /* nav bar / sheets */
-  --material-thick: rgba(255, 255, 255, 0.86);
+  --bg: #fbf7f0;                 /* warm paper */
+  --bg-grouped: #f4ecdf;
+  --surface: #fffdf8;
+  --surface-2: #f6f0e5;
+  --surface-3: #eae1d1;
+  --material: rgba(251, 247, 240, 0.78);
+  --material-thick: rgba(251, 247, 240, 0.9);
 
   /* Labels */
-  --text: #1d1d1f;
-  --text-2: #6e6e73;
-  --text-3: #86868b;
+  --text: #2a211a;
+  --text-2: #6d6053;
+  --text-3: #80736a;
   --text-on-accent: #ffffff;
 
   /* Fills & separators */
-  --fill: rgba(120, 120, 128, 0.12);
-  --fill-2: rgba(120, 120, 128, 0.16);
-  --fill-3: rgba(120, 120, 128, 0.24);
-  --separator: rgba(60, 60, 67, 0.14);
-  --separator-strong: rgba(60, 60, 67, 0.29);
+  --fill: rgba(122, 100, 72, 0.12);
+  --fill-2: rgba(122, 100, 72, 0.18);
+  --fill-3: rgba(122, 100, 72, 0.28);
+  --separator: rgba(74, 52, 30, 0.14);
+  --separator-strong: rgba(74, 52, 30, 0.28);
 
   /* System colors */
-  --accent: #0071e3;             /* apple.com link/button blue */
-  --accent-hover: #0077ed;
-  --accent-pressed: #006edb;
-  --accent-soft: rgba(0, 113, 227, 0.1);
-  --accent-text: #0066cc;
-  --green: #34c759;
-  --green-text: #248a3d;
-  --green-soft: rgba(52, 199, 89, 0.14);
-  --orange: #ff9500;
-  --orange-text: #c93400;
-  --orange-soft: rgba(255, 149, 0, 0.14);
-  --red: #ff3b30;
-  --red-text: #d70015;
-  --red-soft: rgba(255, 59, 48, 0.12);
-  --yellow: #ffcc00;
-  --purple: #af52de;
-  --purple-soft: rgba(175, 82, 222, 0.12);
-  --teal: #30b0c7;
-  --pink: #ff2d55;
-  --indigo: #5856d6;
+  --accent: #c2410c;             /* terracotta */
+  --accent-hover: #ae3a0a;
+  --accent-pressed: #9a3412;
+  --accent-soft: rgba(194, 65, 12, 0.1);
+  --accent-text: #a8380a;
+  --green: #2f9e5b;
+  --green-text: #1f7a43;
+  --green-soft: rgba(47, 158, 91, 0.14);
+  --orange: #e8860c;
+  --orange-text: #b4530a;
+  --orange-soft: rgba(232, 134, 12, 0.14);
+  --red: #d92d20;
+  --red-text: #b42318;
+  --red-soft: rgba(217, 45, 32, 0.1);
+  --yellow: #e0a800;
+  --gold: #cf9316;
+  --purple: #8a5a44;
+  --purple-soft: rgba(138, 90, 68, 0.12);
+  --teal: #0f8b80;
+  --pink: #c9436b;
+  --indigo: #3f5f8a;
 
   /* Elevation */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 20px 48px -12px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.05);
-  --ring: 0 0 0 4px rgba(0, 113, 227, 0.22);
+  --ring: 0 0 0 4px rgba(194, 65, 12, 0.22);
 
   /* Shape */
   --radius-xs: 8px;
@@ -80,9 +81,7 @@
   --nav-height: 52px;
   --content-max: 1120px;
 
-  /* Backdrop (see .backdrop) */
-  --backdrop-light: rgba(0, 0, 0, 0.035);
-  --grid-line: rgba(0, 0, 0, 0.045);
+  --topo: rgba(90, 66, 40, 0.1);
   --card-sheen: none;
 
   color-scheme: light;
@@ -92,54 +91,54 @@
 /* Neutral graphite rather than pure #000, so cards and shadows have
    something to sit on. */
 :root[data-theme="dark"] {
-  --bg: #0b0b0c;
-  --bg-grouped: #111113;
-  --surface: #161618;
-  --surface-2: #1f1f22;
-  --surface-3: #2a2a2e;
-  --material: rgba(16, 16, 18, 0.72);
-  --material-thick: rgba(22, 22, 24, 0.88);
+  --bg: #14110d;
+  --bg-grouped: #1a1611;
+  --surface: #1f1a15;
+  --surface-2: #2a241d;
+  --surface-3: #373027;
+  --material: rgba(20, 17, 13, 0.76);
+  --material-thick: rgba(26, 22, 17, 0.9);
 
-  --text: #f5f5f7;
-  --text-2: #a1a1a6;
-  --text-3: #86868b;
-  --text-on-accent: #ffffff;
+  --text: #f6efe4;
+  --text-2: #b8ab9a;
+  --text-3: #95897b;
+  --text-on-accent: #1c0f06;
 
-  --fill: rgba(118, 118, 128, 0.2);
-  --fill-2: rgba(118, 118, 128, 0.28);
-  --fill-3: rgba(118, 118, 128, 0.36);
-  --separator: rgba(255, 255, 255, 0.08);
-  --separator-strong: rgba(255, 255, 255, 0.15);
+  --fill: rgba(190, 170, 140, 0.14);
+  --fill-2: rgba(190, 170, 140, 0.2);
+  --fill-3: rgba(190, 170, 140, 0.28);
+  --separator: rgba(255, 240, 215, 0.1);
+  --separator-strong: rgba(255, 240, 215, 0.18);
 
-  --accent: #0a84ff;
-  --accent-hover: #2190ff;
-  --accent-pressed: #0077ed;
-  --accent-soft: rgba(10, 132, 255, 0.16);
-  --accent-text: #3d9dff;
-  --green: #30d158;
-  --green-text: #30d158;
-  --green-soft: rgba(48, 209, 88, 0.16);
-  --orange: #ff9f0a;
-  --orange-text: #ffb340;
-  --orange-soft: rgba(255, 159, 10, 0.16);
-  --red: #ff453a;
-  --red-text: #ff6961;
-  --red-soft: rgba(255, 69, 58, 0.16);
-  --yellow: #ffd60a;
-  --purple: #bf5af2;
-  --purple-soft: rgba(191, 90, 242, 0.16);
-  --teal: #40c8e0;
-  --pink: #ff375f;
-  --indigo: #5e5ce6;
+  --accent: #e8743b;
+  --accent-hover: #f0854f;
+  --accent-pressed: #d9652e;
+  --accent-soft: rgba(232, 116, 59, 0.18);
+  --accent-text: #f2986a;
+  --green: #4cc47f;
+  --green-text: #5fd090;
+  --green-soft: rgba(76, 196, 127, 0.16);
+  --orange: #f2a33a;
+  --orange-text: #f5b458;
+  --orange-soft: rgba(242, 163, 58, 0.16);
+  --red: #f0655a;
+  --red-text: #f4857c;
+  --red-soft: rgba(240, 101, 90, 0.16);
+  --yellow: #f0c63a;
+  --gold: #e3b04b;
+  --purple: #c49a82;
+  --purple-soft: rgba(196, 154, 130, 0.16);
+  --teal: #3cc6b8;
+  --pink: #e8799a;
+  --indigo: #86a5cf;
 
-  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 24px -8px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 28px 60px -18px rgba(0, 0, 0, 0.85);
-  --ring: 0 0 0 4px rgba(10, 132, 255, 0.35);
+  --shadow-sm: 0 0 0 1px rgba(255, 240, 215, 0.06);
+  --shadow-md: 0 0 0 1px rgba(255, 240, 215, 0.07), 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 0 0 1px rgba(255, 240, 215, 0.09), 0 28px 60px -18px rgba(0, 0, 0, 0.85);
+  --ring: 0 0 0 4px rgba(232, 116, 59, 0.35);
 
-  --backdrop-light: rgba(255, 255, 255, 0.05);
-  --grid-line: rgba(255, 255, 255, 0.045);
-  --card-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 40%);
+  --topo: rgba(255, 235, 205, 0.07);
+  --card-sheen: linear-gradient(180deg, rgba(255, 240, 215, 0.03), rgba(255, 240, 215, 0) 40%);
 
   color-scheme: dark;
 }
@@ -199,7 +198,6 @@
     overflow-x: hidden;
   }
   h1, h2, h3, h4 {
-    font-family: var(--font-display);
     color: var(--text);
     text-wrap: balance;
   }
@@ -214,10 +212,10 @@
 
 /* ── Typography scale (Apple marketing + HIG text styles) ───────── */
 @layer components {
-  .t-hero      { font-size: clamp(2.75rem, 7vw, 5rem);   line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; }
-  .t-display   { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.07; font-weight: 700; letter-spacing: -0.03em; }
-  .t-title-1   { font-size: clamp(1.75rem, 3.4vw, 2.5rem); line-height: 1.1; font-weight: 700; letter-spacing: -0.025em; }
-  .t-title-2   { font-size: 1.5rem;   line-height: 1.17; font-weight: 600; letter-spacing: -0.02em; }
+  .t-hero      { font-family: var(--font-display); font-size: clamp(3rem, 8vw, 6rem); line-height: 1.02; font-weight: 400; letter-spacing: -0.015em; }
+  .t-display   { font-family: var(--font-display); font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.08; font-weight: 400; letter-spacing: -0.012em; }
+  .t-title-1   { font-family: var(--font-display); font-size: clamp(1.75rem, 3.4vw, 2.5rem); line-height: 1.12; font-weight: 400; letter-spacing: -0.008em; }
+  .t-title-2   { font-family: var(--font-display); font-size: 1.625rem; line-height: 1.17; font-weight: 400; letter-spacing: -0.005em; }
   .t-title-3   { font-size: 1.25rem;  line-height: 1.2;  font-weight: 600; letter-spacing: -0.017em; }
   .t-headline  { font-size: 1.0625rem; line-height: 1.3; font-weight: 600; letter-spacing: -0.022em; }
   .t-body      { font-size: 1.0625rem; line-height: 1.47; font-weight: 400; }
@@ -225,7 +223,7 @@
   .t-subhead   { font-size: 0.9375rem; line-height: 1.4; font-weight: 400; letter-spacing: -0.01em; }
   .t-footnote  { font-size: 0.8125rem; line-height: 1.38; font-weight: 400; letter-spacing: -0.005em; }
   .t-caption   { font-size: 0.75rem;  line-height: 1.33; font-weight: 500; letter-spacing: 0; }
-  .t-eyebrow   { font-size: 0.8125rem; line-height: 1.2; font-weight: 600; letter-spacing: 0.01em; color: var(--accent-text); }
+  .t-eyebrow   { font-size: 0.75rem; line-height: 1.2; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-text); }
   .t-secondary { color: var(--text-2); }
   .t-tertiary  { color: var(--text-3); }
   .tabular     { font-variant-numeric: tabular-nums; }
@@ -421,30 +419,69 @@
 
 
 /* ── Backdrop ───────────────────────────────────────────────────── */
-/* Fixed behind every page: a soft neutral light from the top and a
-   fine architectural grid that fades out. Monochrome on purpose — the
-   photography and the one accent colour carry the colour. */
 .backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(80% 55% at 50% -10%, var(--backdrop-light), transparent 70%),
-    var(--bg);
+  background: var(--bg);
 }
-.backdrop::before {
+
+/* Map contour lines behind a section (children sit above via isolation). */
+.topo-band { position: relative; isolation: isolate; }
+.topo-band::before {
   content: "";
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 56px 56px;
-  background-position: center top;
-  -webkit-mask-image: radial-gradient(75% 55% at 50% 0%, #000 20%, transparent 80%);
-  mask-image: radial-gradient(75% 55% at 50% 0%, #000 20%, transparent 80%);
+  z-index: -1;
+  background: var(--topo);
+  -webkit-mask: url("./assets/topo.svg") center / cover no-repeat;
+  mask: url("./assets/topo.svg") center / cover no-repeat;
+  pointer-events: none;
 }
+
+/* Text on photographs */
+.on-photo { color: #fff; --text: #fff; --text-2: rgba(255, 255, 255, 0.88); --text-3: rgba(255, 255, 255, 0.72); --accent-text: #ffd9b8; }
+.photo-scrim {
+  background:
+    linear-gradient(90deg, rgba(20, 12, 5, 0.62) 0%, rgba(20, 12, 5, 0.3) 45%, rgba(20, 12, 5, 0) 75%),
+    linear-gradient(180deg, rgba(20, 12, 5, 0.42) 0%, rgba(20, 12, 5, 0.12) 30%, rgba(20, 12, 5, 0.3) 62%, rgba(20, 12, 5, 0.72) 100%);
+}
+
+/* Lines a full-width scrolling row up with the page content */
+.rail-pad { padding-inline: 22px; }
+@media (min-width: 768px) { .rail-pad { padding-inline: max(32px, calc((100vw - var(--content-max)) / 2 + 32px)); } }
+
+/* Navbar sitting on a photo, before the page has scrolled */
+.nav-on-photo { --text: #fff; --text-2: rgba(255, 255, 255, 0.86); --fill: rgba(255, 255, 255, 0.18); --fill-2: rgba(255, 255, 255, 0.28); }
+
+/* Selectable option card */
+.option-card {
+  text-align: left;
+  min-height: 60px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--fill);
+  border: 1px solid transparent;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.15s;
+}
+.option-card:hover { background: var(--fill-2); }
+.option-card:active { transform: scale(0.98); }
+.option-card[aria-checked="true"] { background: var(--accent); color: var(--text-on-accent); }
+
+.range-input {
+  width: 100%;
+  height: 28px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Packing list tick */
+.tick { width: 20px; height: 20px; flex: none; accent-color: var(--accent); cursor: pointer; }
+
+/* Slow push-in on hero photographs */
+@keyframes tg-push-in { from { transform: scale(1.08); } to { transform: scale(1); } }
+.push-in { animation: tg-push-in 9s ease-out both; }
 
 /* Theme switch should not animate every element */
 .theme-transition, .theme-transition * {

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, Clock3, MapPin } from 'lucide-react';
+import { ArrowUpRight, Clock3, MapPin, Route } from 'lucide-react';
 import { Reveal } from '../ui';
 import { cx } from '../../lib/ui';
-import { formatINR, formatMinutes, formatTime, mapsUrl, pluralize } from '../../lib/format';
+import { dayRouteUrl, formatINR, formatMinutes, formatTime, mapsUrl, pluralize } from '../../lib/format';
 import { activityMapsQuery, categoryMeta, dayLabel, hourRange } from './tripModel';
 
 const NAV_OFFSET = 52 + 64; // fixed nav + sticky day pills
@@ -115,7 +115,9 @@ function DaySection({ trip, day, sectionRef }) {
   const { short, date } = dayLabel(trip, day);
   const headingId = `day-${day.day}-title`;
   const range = trip.isHours ? hourRange(day.activities) : '';
-  const stops = day.activities.filter((a) => a.category !== 'transit' && a.category !== 'stay').length;
+  const places = day.activities.filter((a) => a.category !== 'transit' && a.category !== 'stay');
+  const stops = places.length;
+  const routeUrl = dayRouteUrl(places.map((a) => activityMapsQuery(a, trip.request.destination)));
 
   return (
     <section
@@ -147,6 +149,18 @@ function DaySection({ trip, day, sectionRef }) {
           <p className="t-caption t-tertiary">{pluralize(stops, 'stop')}</p>
         </div>
       </header>
+
+      {routeUrl && (
+        <a
+          href={routeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-tinted btn-sm no-print -mt-2 mb-6 min-h-11"
+        >
+          <Route size={15} strokeWidth={2} aria-hidden />
+          Follow this route in Maps
+        </a>
+      )}
 
       {day.activities.length ? (
         <ol>

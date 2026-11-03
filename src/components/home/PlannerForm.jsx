@@ -1,18 +1,21 @@
 import { useId, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ChevronDown, Navigation, Sparkles } from 'lucide-react';
+import { CircleAlert, CircleCheck, ChevronDown, Navigation, Shuffle, Sparkles } from 'lucide-react';
 
 import { Button, Chip, Field, SegmentedControl, Stepper, TextInput } from '../ui';
 import GenerationOverlay from '../trip/GenerationOverlay';
 import useTripGeneration from '../../hooks/useTripGeneration';
 import {
-  BUDGETS, COMPANIONS, DEFAULT_REQUEST, INTERESTS, MAX_INTERESTS, MOODS, PACES, PLAN_MODES, TRANSPORTS,
+  BUDGETS, COMPANIONS, DEFAULT_REQUEST, FOOD_PREFERENCES, INTERESTS, MAX_INTERESTS, MAX_NOTES, MOODS, PACES, PLAN_MODES, STAY_TYPES, TRANSPORTS,
   labelOf, modeFor, normalizeRequest, validateRequest,
 } from '../../lib/planner';
+import { destinations } from '../../data/destinations';
+import { seasonNote } from '../../lib/season';
 import { getLastRequest } from '../../lib/storage';
 import { formatDate, formatINR, pluralize } from '../../lib/format';
 import { cx } from '../../lib/ui';
 import DestinationField from './DestinationField';
+import BudgetField from './BudgetField';
 import BudgetPreview from './BudgetPreview';
 import { describeBudget } from './budget';
 import { withIcons } from './icons';
@@ -22,12 +25,11 @@ import { useIsNarrow } from './hooks';
 const plain = (list) => list.map(({ id, label }) => ({ id, label }));
 const MODE_OPTIONS = plain(PLAN_MODES);
 const COMPANION_OPTIONS = plain(COMPANIONS);
-const BUDGET_OPTIONS = plain(BUDGETS);
 const PACE_OPTIONS = plain(PACES);
 const TRANSPORT_OPTIONS = plain(TRANSPORTS);
 const MOOD_OPTIONS = withIcons(MOODS);
 
-const FIELD_ORDER = ['destination', 'origin', 'duration', 'travelers', 'start_date'];
+const FIELD_ORDER = ['destination', 'origin', 'duration', 'travelers', 'start_date', 'custom_budget', 'notes'];
 
 const pad = (n) => String(n).padStart(2, '0');
 function todayISO() {
@@ -49,7 +51,9 @@ function initialState(initialRequest) {
 }
 
 function customizeSummary(req) {
-  const parts = [`${labelOf(BUDGETS, req.budget)} budget`, labelOf(MOODS, req.mood), `${labelOf(PACES, req.pace)} pace`];
+  const budget = req.custom_budget ? `${formatINR(req.custom_budget)}${req.custom_budget_basis === 'per_person' ? ' each' : ' budget'}` : `${labelOf(BUDGETS, req.budget)} budget`;
+  const parts = [budget, labelOf(MOODS, req.mood), `${labelOf(PACES, req.pace)} pace`];
+  if (req.food !== 'any') parts.push(labelOf(FOOD_PREFERENCES, req.food));
   if (req.start_date) parts.push(formatDate(req.start_date));
   if (req.interests.length) parts.push(pluralize(req.interests.length, 'interest'));
   return parts.join(' · ');
@@ -69,6 +73,7 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
     origin: `${uid}origin`,
     date: `${uid}date`,
     more: `${uid}more`,
+    notes: `${uid}notes`,
   };
   const reduce = useReducedMotion();
   const narrow = useIsNarrow();
@@ -123,9 +128,9 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
     const first = FIELD_ORDER.find((k) => errs[k]);
     if (first) {
       const refs = { destination: destRef, origin: originRef, start_date: dateRef };
-      if (first === 'start_date' && isHero && !expanded) {
+      if (isHero && !expanded && ['start_date', 'custom_budget', 'notes'].includes(first)) {
         setExpanded(true);
-        window.setTimeout(() => dateRef.current?.focus(), 60);
+        if (first === 'start_date') window.setTimeout(() => dateRef.current?.focus(), 60);
       } else {
         refs[first]?.current?.focus();
       }
@@ -136,8 +141,23 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
 
   /* ── Fields ── */
 
+  const surpriseMe = () => {
+    const others = destinations.filter((d) => d.name !== req.destination);
+    update({ destination: others[Math.floor(Math.random() * others.length)].name });
+  };
+
   const destinationField = (
-    <Field label="Where to?" htmlFor={ids.destination} error={errors.destination}>
+    <Field
+      label="Where to?"
+      htmlFor={ids.destination}
+      error={errors.destination}
+      hint={(
+        <button type="button" onClick={surpriseMe} className="link inline-flex items-center gap-1.5 font-medium min-h-[28px]">
+          <Shuffle size={13} strokeWidth={2.25} aria-hidden />
+          Not sure? Surprise me
+        </button>
+      )}
+    >
       <DestinationField
         ref={destRef}
         id={ids.destination}
@@ -213,13 +233,14 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
     </Field>
   );
 
+  const season = seasonNote(req.destination, req.start_date);
   const dateField = (
     <Field
       label={req.plan_mode === 'hours' ? 'Date' : 'Start date'}
       optional
       htmlFor={ids.date}
       error={errors.start_date}
-      hint="Helps account for season, weather and weekends."
+      hint={season ? <SeasonHint season={season} /> : 'Helps account for season, weather and weekends.'}
     >
       <input
         ref={dateRef}
@@ -236,15 +257,8 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
 
   const budgetField = (
     <Field label={isHero ? 'Budget' : undefined}>
-      <SegmentedControl
-        label="Budget"
-        options={BUDGET_OPTIONS}
-        value={req.budget}
-        onChange={(id) => update({ budget: id })}
-        size={narrow ? 'sm' : 'md'}
-      />
-      <p className="t-footnote t-secondary mt-2.5">{BUDGETS.find((b) => b.id === req.budget)?.description}</p>
-      {isHero && <BudgetPreview request={req} className="mt-4 card-inset p-4" />}
+      <BudgetField request={req} onChange={update} error={errors.custom_budget} />
+      {isHero && !req.custom_budget && <BudgetPreview request={req} className="mt-4 card-inset p-4" />}
     </Field>
   );
 
@@ -283,6 +297,47 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
           onChange={(id) => update({ transport: id })}
         />
       </fieldset>
+    </Field>
+  );
+
+  const stayField = (
+    <Field label="Where you like to stay">
+      <div role="group" aria-label="Where you like to stay" className="flex flex-wrap gap-2">
+        {STAY_TYPES.map((o) => (
+          <Chip key={o.id} selected={req.stay_type === o.id} onClick={() => update({ stay_type: o.id })}>{o.label}</Chip>
+        ))}
+      </div>
+    </Field>
+  );
+
+  const foodField = (
+    <Field label="Food">
+      <div role="group" aria-label="Food" className="flex flex-wrap gap-2">
+        {FOOD_PREFERENCES.map((o) => (
+          <Chip key={o.id} selected={req.food === o.id} onClick={() => update({ food: o.id })}>{o.label}</Chip>
+        ))}
+      </div>
+    </Field>
+  );
+
+  const notesField = (
+    <Field
+      label="Anything else?"
+      optional
+      htmlFor={ids.notes}
+      error={errors.notes}
+      hint={`${req.notes.length} of ${MAX_NOTES} · Must-sees, places to skip, an anniversary, a parent who can’t manage stairs…`}
+    >
+      <textarea
+        id={ids.notes}
+        className="input !py-3 min-h-[92px] resize-y"
+        rows={3}
+        maxLength={MAX_NOTES}
+        placeholder="e.g. We’d love a sunrise boat ride, and please avoid long drives."
+        value={req.notes}
+        aria-invalid={errors.notes ? true : undefined}
+        onChange={(e) => update({ notes: e.target.value })}
+      />
     </Field>
   );
 
@@ -347,7 +402,7 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
             >
               <span className="min-w-0">
                 <span className="t-headline block">
-                  Customize <span className="font-normal t-secondary hidden sm:inline">— budget, vibe, pace, interests</span>
+                  Make it yours <span className="font-normal t-secondary hidden sm:inline">— your budget, food, stay, vibe and more</span>
                 </span>
                 <span className="t-footnote t-secondary block truncate mt-0.5">{customizeSummary(req)}</span>
               </span>
@@ -376,7 +431,10 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
                     {paceField}
                     {dateField}
                     {transportField}
+                    {req.plan_mode === 'days' && stayField}
+                    {foodField}
                     <div className="md:col-span-2">{interestsField}</div>
+                    <div className="md:col-span-2">{notesField}</div>
                   </div>
                 </motion.div>
               )}
@@ -385,9 +443,9 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
 
           <div className="hairline-t pt-6 flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-4">
             <p className="t-subhead t-secondary text-center md:text-left" aria-live="polite">
-              Estimated <span className="font-semibold tabular" style={{ color: 'var(--text)' }}>{formatINR(b.total)}</span>
+              {req.custom_budget ? 'Your budget' : 'Estimated'} <span className="font-semibold tabular" style={{ color: 'var(--text)' }}>{formatINR(b.total)}</span>
               {' '}for {pluralize(b.travelers, 'traveler')}
-              <span className="hidden sm:inline"> · {labelOf(BUDGETS, req.budget)}</span>
+              {!req.custom_budget && <span className="hidden sm:inline"> · {labelOf(BUDGETS, req.budget)}</span>}
             </p>
             {submitButton}
           </div>
@@ -416,16 +474,21 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
               {whoField}
             </div>
           </Group>
-          <Group title="Budget" description="Sets the total Gemini plans against. Prices are for the whole group.">
+          <Group title="Budget" description="Pick a level, or set your own figure and we’ll plan inside it.">
             {budgetField}
           </Group>
           <Group title="Style">
             {vibeField}
             {paceField}
             {transportField}
+            {req.plan_mode === 'days' && stayField}
+            {foodField}
           </Group>
           <Group title="Interests" description="Optional. Pick up to five to shape what you’ll do each day.">
             {interestsField}
+          </Group>
+          <Group title="Special requests">
+            {notesField}
           </Group>
         </form>
 
@@ -445,6 +508,18 @@ export default function PlannerForm({ initialRequest, variant = 'hero', autoFocu
       </div>
       <GenerationOverlay generation={gen} />
     </>
+  );
+}
+
+function SeasonHint({ season }) {
+  const { name, bestTime, inSeason } = season;
+  if (inSeason === null) return <>Best time for {name}: {bestTime}.</>;
+  const Icon = inSeason ? CircleCheck : CircleAlert;
+  return (
+    <span className="inline-flex items-start gap-1.5" style={{ color: inSeason ? 'var(--green-text)' : 'var(--orange-text)' }}>
+      <Icon size={14} strokeWidth={2} className="mt-px shrink-0" aria-hidden />
+      {inSeason ? `Good timing: ${name} is best ${bestTime}.` : `Outside ${name}’s best season (${bestTime}). We’ll plan around the weather.`}
+    </span>
   );
 }
 

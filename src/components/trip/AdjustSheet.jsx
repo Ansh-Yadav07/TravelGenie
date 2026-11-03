@@ -5,12 +5,13 @@ import { Heart, Landmark, Mountain, Music, Sun, X } from 'lucide-react';
 import { Button, Chip, SegmentedControl, Stepper } from '../ui';
 import { cx, spring } from '../../lib/ui';
 import {
-  BUDGETS, INTERESTS, MAX_INTERESTS, MOODS, PACES, computeBudget, modeFor, normalizeRequest,
+  INTERESTS, MAX_INTERESTS, MOODS, PACES, computeBudget, modeFor, normalizeRequest, validateRequest,
 } from '../../lib/planner';
+import BudgetField from '../home/BudgetField';
 import { formatINR, pluralize } from '../../lib/format';
 
 const MOOD_ICONS = { Sun, Mountain, Heart, Landmark, Music };
-const FIELDS = ['budget', 'mood', 'pace', 'duration', 'travelers', 'interests'];
+const FIELDS = ['budget', 'custom_budget', 'custom_budget_basis', 'budget_priority', 'mood', 'pace', 'duration', 'travelers', 'interests'];
 
 /**
  * Modal sheet to tweak the main knobs of a trip and regenerate on demand.
@@ -84,6 +85,7 @@ function SheetBody({ trip, onClose, onSubmit }) {
   const next = useMemo(() => normalizeRequest({ ...original, ...draft, companions: companionsFor(original.companions, draft.travelers) }), [original, draft]);
   const before = useMemo(() => computeBudget(original).total, [original]);
   const after = useMemo(() => computeBudget(next).total, [next]);
+  const budgetError = validateRequest(next).custom_budget;
   const changed = FIELDS.some((f) => JSON.stringify(original[f]) !== JSON.stringify(next[f]));
   const set = (key) => (value) => setDraft((d) => ({ ...d, [key]: value }));
   const toggleInterest = (iid) => setDraft((d) => ({
@@ -119,14 +121,8 @@ function SheetBody({ trip, onClose, onSubmit }) {
 
       {/* Controls */}
       <div className="flex-1 overflow-y-auto overscroll-contain px-5 sm:px-7 py-5 space-y-6">
-        <Group label="Budget" id={`${id}-budget`} hint={BUDGETS.find((b) => b.id === draft.budget)?.description}>
-          <SegmentedControl
-            label="Budget"
-            size="sm"
-            options={BUDGETS.map((b) => ({ id: b.id, label: b.label }))}
-            value={draft.budget}
-            onChange={set('budget')}
-          />
+        <Group label="Budget" id={`${id}-budget`}>
+          <BudgetField request={next} compact error={budgetError} onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))} />
         </Group>
 
         <Group label="Vibe" id={`${id}-mood`}>
@@ -201,7 +197,7 @@ function SheetBody({ trip, onClose, onSubmit }) {
         </div>
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" disabled={!changed} onClick={() => onSubmit(next)}>
+          <Button className="flex-1" disabled={!changed || Boolean(budgetError)} onClick={() => onSubmit(next)}>
             Update plan
           </Button>
         </div>
@@ -223,6 +219,9 @@ function Group({ label, id, hint, children }) {
 function pick(req) {
   return {
     budget: req.budget,
+    custom_budget: req.custom_budget ?? null,
+    custom_budget_basis: req.custom_budget_basis || 'total',
+    budget_priority: req.budget_priority || 'balanced',
     mood: req.mood,
     pace: req.pace,
     duration: req.duration,

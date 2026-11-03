@@ -1,3 +1,5 @@
+import PageHero from '../components/layout/PageHero';
+import { getDestination } from '../data/destinations';
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { HardDrive, Luggage, Plus } from 'lucide-react';
@@ -14,6 +16,8 @@ const time = (iso) => {
   const t = new Date(iso).getTime();
   return Number.isNaN(t) ? 0 : t;
 };
+
+const HERO_IMAGE = getDestination('hampi')?.image || '';
 
 export default function Trips() {
   const toast = useToast();
@@ -47,16 +51,14 @@ export default function Trips() {
   };
 
   return (
-    <div className="page-top pb-24 md:pb-32">
-      <div className="container-x">
-        <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-10 md:mb-12">
-          <div>
-            <h1 className="t-display">Your trips</h1>
-            <p className="t-callout t-secondary mt-3 flex items-center gap-1.5">
-              <HardDrive size={15} strokeWidth={2} aria-hidden className="shrink-0" />
-              Saved in this browser only — they won’t sync to other devices.
-            </p>
-          </div>
+    <div className="pb-24 md:pb-32">
+      <PageHero image={HERO_IMAGE} eyebrow="Your journal" title="Your trips" />
+      <div className="container-x pt-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8 md:mb-10">
+          <p className="t-callout t-secondary flex items-center gap-1.5">
+            <HardDrive size={15} strokeWidth={2} aria-hidden className="shrink-0" />
+            Saved in this browser only — they won’t sync to other devices.
+          </p>
           {trips.length > 0 && (
             <div className="flex items-center gap-2">
               <ConfirmPopover
@@ -75,7 +77,7 @@ export default function Trips() {
               <Button to="/plan" size="sm" icon={Plus} className="min-h-11">Plan a trip</Button>
             </div>
           )}
-        </header>
+        </div>
 
         {trips.length === 0 ? (
           <div className="card-flat">

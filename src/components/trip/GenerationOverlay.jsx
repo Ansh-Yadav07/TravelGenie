@@ -12,6 +12,7 @@ const STAGES = [
   { id: 'days', label: 'Planning each day' },
   { id: 'tips', label: 'Adding local tips' },
 ];
+const WAKE_HINT_AFTER_S = 8;
 const ORDER = ['connecting', 'thinking', ...STAGES.map((s) => s.id), 'finalizing'];
 
 /**
@@ -98,6 +99,12 @@ export default function GenerationOverlay({ generation }) {
                   <span aria-live="polite">{progress?.message || 'Working…'}</span>
                   <span>{elapsed}s</span>
                 </div>
+
+                {progress?.stage === 'connecting' && elapsed >= WAKE_HINT_AFTER_S && (
+                  <p className="t-footnote t-secondary -mt-3 mb-6">
+                    The server is waking up after a quiet spell. This can take up to a minute, and only happens on the first plan.
+                  </p>
+                )}
 
                 <ol className="space-y-3 mb-7">
                   {STAGES.map((s) => {

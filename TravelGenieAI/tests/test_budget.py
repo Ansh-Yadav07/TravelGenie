@@ -74,3 +74,47 @@ def test_summarize_budget_without_stays():
     out = summarize_budget(plan, [], [{"total_cost": 300, "recommended": True}], [{"activities": [{"cost": 1000}]}])
     assert out["estimate"]["stay"] == 0
     assert out["estimate"]["total"] == 1300
+
+
+def test_custom_budget_total_is_exact_and_ignores_tier():
+    for tier in ("budget", "ultra"):
+        b = compute_budget(req(origin="Delhi", duration=4, travelers=2, budget=tier, custom_budget=40250))
+        assert b.tier == "custom"
+        assert b.total == 40250
+    assert b.stay + b.transport + b.activities == 40250
+
+
+def test_custom_budget_per_person_scales_with_travelers():
+    b = compute_budget(req(duration=3, travelers=3, custom_budget=10000, custom_budget_basis="per_person"))
+    assert b.total == 30000
+
+
+def test_custom_budget_picks_nearest_style():
+    assert compute_budget(req(duration=3, travelers=2, custom_budget=12000)).style == "budget"
+    assert compute_budget(req(duration=3, travelers=2, custom_budget=40000)).style == "moderate"
+    assert compute_budget(req(duration=3, travelers=2, custom_budget=2000000)).style == "ultra"
+
+
+def test_custom_budget_priority_shifts_money():
+    base = dict(origin="Delhi", duration=4, travelers=2, custom_budget=50000)
+    balanced = compute_budget(req(**base))
+    assert compute_budget(req(**base, budget_priority="stay")).stay > balanced.stay
+    assert compute_budget(req(**base, budget_priority="transport")).transport > balanced.transport
+    assert compute_budget(req(**base, budget_priority="experiences")).activities > balanced.activities
+
+
+def test_custom_budget_tight_flag():
+    assert compute_budget(req(duration=5, travelers=2, custom_budget=5000)).tight is True
+    assert compute_budget(req(duration=5, travelers=2, custom_budget=60000)).tight is False
+
+
+def test_custom_budget_hours_mode_has_no_stay():
+    b = compute_budget(req(plan_mode="hours", duration=4, travelers=2, custom_budget=3000))
+    assert b.stay == 0
+    assert b.total == 3000
+
+
+def test_summary_reports_custom_tier_and_style():
+    plan = compute_budget(req(duration=3, travelers=2, custom_budget=40000))
+    summary = summarize_budget(plan, [], [], [])
+    assert (summary["tier"], summary["style"]) == ("custom", "moderate")

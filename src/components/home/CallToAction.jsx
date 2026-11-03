@@ -2,7 +2,7 @@ import { ArrowUp } from 'lucide-react';
 import { Button, ChevronLink, Reveal, SmartImage } from '../ui';
 import { getDestination } from '../../data/destinations';
 
-const BACKDROP = getDestination('kerala');
+const BACKDROP = getDestination('goa');
 
 /** Scroll back to the hero planner and put the cursor in "Where to?". */
 function focusPlanner() {

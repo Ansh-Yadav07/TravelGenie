@@ -1,6 +1,8 @@
-import { ArrowUpRight, BedDouble, Lightbulb, Route, Sparkles, Star } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowUpRight, BedDouble, Lightbulb, Luggage, Route, Sparkles, Star } from 'lucide-react';
 import { cx } from '../../lib/ui';
 import { directionsUrl, formatINR, formatRelative, mapsUrl } from '../../lib/format';
+import { getPackedItems, setPackedItems } from '../../lib/storage';
 import { modeMeta } from './tripModel';
 
 function Panel({ icon: Icon, title, id, children, className }) {
@@ -68,12 +70,20 @@ export function StaysPanel({ trip }) {
                 <span className="t-footnote t-tertiary"> / night</span>
                 {s.total_cost > 0 && <span className="block t-footnote t-secondary">{formatINR(s.total_cost)} total</span>}
               </p>
-              <OutLink
-                href={mapsUrl([s.name, s.area, trip.request.destination].filter(Boolean).join(', '))}
-                label={`Open ${s.name} in Maps (opens in a new tab)`}
-              >
-                Maps
-              </OutLink>
+              <span className="flex items-center gap-3">
+                <OutLink
+                  href={`https://www.google.com/search?${new URLSearchParams({ q: `${s.name} ${trip.request.destination} room rates` })}`}
+                  label={`Check room rates for ${s.name} (opens in a new tab)`}
+                >
+                  Rates
+                </OutLink>
+                <OutLink
+                  href={mapsUrl([s.name, s.area, trip.request.destination].filter(Boolean).join(', '))}
+                  label={`Open ${s.name} in Maps (opens in a new tab)`}
+                >
+                  Maps
+                </OutLink>
+              </span>
             </div>
           </li>
         ))}
@@ -127,6 +137,34 @@ export function TransportPanel({ trip }) {
             </li>
           );
         })}
+      </ul>
+    </Panel>
+  );
+}
+
+export function PackingPanel({ trip }) {
+  const [packed, setPacked] = useState(() => getPackedItems(trip.id));
+  if (!trip.packing.length) return null;
+
+  const toggle = (item) => {
+    const next = packed.includes(item) ? packed.filter((x) => x !== item) : [...packed, item];
+    setPacked(next);
+    setPackedItems(trip.id, next);
+  };
+  const done = trip.packing.filter((item) => packed.includes(item)).length;
+
+  return (
+    <Panel icon={Luggage} title="What to pack" id="packing-title">
+      <p className="t-footnote t-tertiary mb-2 tabular" aria-live="polite">{done} of {trip.packing.length} packed</p>
+      <ul>
+        {trip.packing.map((item) => (
+          <li key={item}>
+            <label className="flex items-center gap-3 min-h-[40px] t-subhead cursor-pointer">
+              <input type="checkbox" className="tick" checked={packed.includes(item)} onChange={() => toggle(item)} />
+              <span className={packed.includes(item) ? 't-tertiary line-through' : undefined}>{item}</span>
+            </label>
+          </li>
+        ))}
       </ul>
     </Panel>
   );

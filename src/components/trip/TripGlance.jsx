@@ -5,7 +5,7 @@ import { cx, easeOut } from '../../lib/ui';
 
 const PARTS = [
   { id: 'stay', label: 'Stay', color: 'var(--accent)' },
-  { id: 'transport', label: 'Transport', color: 'var(--orange)' },
+  { id: 'transport', label: 'Transport', color: 'var(--gold)' },
   { id: 'activities', label: 'Activities & food', color: 'var(--teal)' },
 ];
 
@@ -133,7 +133,7 @@ function BudgetCard({ budget, over, onAdjust }) {
             {delta === 0 ? 'Right on budget' : `${formatINR(delta)} ${over ? 'over' : 'under'} budget`}
           </strong>
           <span className="t-secondary">
-            {over ? ' — try a lower tier or fewer days.' : ' — room for a splurge or two.'}
+            {over ? (budget.tier === 'custom' ? ' — try fewer days or stops, or raise your budget.' : ' — try a lower tier or fewer days.') : ' — room for a splurge or two.'}
           </span>
         </p>
         {over && onAdjust && (
@@ -142,6 +142,21 @@ function BudgetCard({ budget, over, onAdjust }) {
           </button>
         )}
       </div>
+
+      {budget.trimmed.length > 0 && (
+        <div className="mt-3 rounded-[12px] px-4 py-3 card-inset">
+          <p className="t-subhead font-semibold">Left out to keep you on budget</p>
+          <ul className="mt-1.5 space-y-1 t-subhead t-secondary">
+            {budget.trimmed.map((t) => (
+              <li key={`${t.day}-${t.title}`} className="flex justify-between gap-3">
+                <span className="min-w-0">{t.title}<span className="t-tertiary"> · Day {t.day}</span></span>
+                <span className="tabular shrink-0">{formatINR(t.cost)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="t-footnote t-tertiary mt-2">Raise your budget with Adjust to bring these back.</p>
+        </div>
+      )}
     </div>
   );
 }

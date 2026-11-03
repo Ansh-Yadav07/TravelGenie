@@ -21,7 +21,7 @@ const COLUMNS = [
 
 export default function Footer() {
   return (
-    <footer className="no-print t-footnote hairline-t surface-grouped" style={{ color: 'var(--text-2)' }}>
+    <footer className="no-print t-footnote hairline-t surface-grouped topo-band" style={{ color: 'var(--text-2)' }}>
       <div className="container-x pt-8 pb-10">
         <div className="pb-5 hairline-b">
           <p className="t-tertiary max-w-3xl">

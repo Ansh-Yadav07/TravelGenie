@@ -7,7 +7,7 @@ import {
   Motorbike, BedDouble, Bus, Camera, Car, CarTaxiFront, Flower2, Footprints, Landmark, MapPin, Mountain, Music,
   Navigation, Plane, Ship, ShoppingBag, TrainFront, TramFront, Trees, UtensilsCrossed, Route,
 } from 'lucide-react';
-import { CATEGORIES, computeBudget, labelOf, BUDGETS, normalizeRequest } from '../../lib/planner';
+import { CATEGORIES, CUSTOM_BUDGET_ID, computeBudget, labelOf, BUDGETS, normalizeRequest } from '../../lib/planner';
 import { dayDate, formatDate, formatDuration, formatINR, formatMinutes, formatTime, pluralize } from '../../lib/format';
 
 /* ── Icons ─────────────────────────────────────────────────────────── */
@@ -142,18 +142,20 @@ export function normalizeTrip(raw) {
       estimate: est,
       status: b.status === 'over' || b.status === 'within' ? b.status : est.total > total ? 'over' : 'within',
       delta,
+      trimmed: arr(b.trimmed).filter((t) => str(t?.title)),
     },
     stays,
     transport_scope: scope,
     transport,
     days,
     tips: arr(raw.tips).map((t) => str(t)).filter(Boolean),
+    packing: arr(raw.packing).map((t) => str(t)).filter(Boolean),
     stopCount: days.reduce((n, d) => n + d.activities.filter((a) => a.category !== 'transit' && a.category !== 'stay').length, 0),
   };
 }
 
 /* ── Derived labels ────────────────────────────────────────────────── */
-export const tierLabel = (id) => labelOf(BUDGETS, id);
+export const tierLabel = (id) => (id === CUSTOM_BUDGET_ID ? 'Custom' : labelOf(BUDGETS, id));
 
 /** "9:00 AM – 3:00 PM" for an hours-mode day, from its first and last activity. */
 export function hourRange(activities) {
@@ -211,4 +213,38 @@ export function tripToText(trip) {
   }
   lines.push('', 'Planned with TravelGenie. Prices and opening hours are estimates — please verify before booking.');
   return lines.join('\n');
+}
+
+/* ── Calendar export ───────────────────────────────────────────────── */
+
+const icsText = (value) => String(value || '').replace(/\\/g, '\\\\').replace(/[,;]/g, '\\$&').replace(/\r?\n/g, '\\n');
+const icsStamp = (date) => `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}00`;
+
+/** The itinerary as an iCalendar file, with one event per timed stop (local time). Needs a start date. */
+export function tripToIcs(trip) {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TravelGenie//Itinerary//EN', 'CALSCALE:GREGORIAN'];
+  const created = `${new Date().toISOString().replace(/[-:]|\.\d+/g, '')}`;
+  trip.days.forEach((day) => {
+    day.activities.forEach((a, i) => {
+      const match = /^(\d{1,2}):(\d{2})$/.exec(a.time);
+      if (!match) return;
+      const start = new Date(`${trip.request.start_date}T00:00:00`);
+      start.setDate(start.getDate() + day.day - 1);
+      start.setHours(Number(match[1]), Number(match[2]));
+      const end = new Date(start.getTime() + (a.duration_minutes || 60) * 60000);
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:${trip.id}-${day.day}-${i}@travelgenie`,
+        `DTSTAMP:${created}`,
+        `DTSTART:${icsStamp(start)}`,
+        `DTEND:${icsStamp(end)}`,
+        `SUMMARY:${icsText(a.title)}`,
+        `LOCATION:${icsText(a.maps_query || a.area)}`,
+        `DESCRIPTION:${icsText(a.description)}`,
+        'END:VEVENT',
+      );
+    });
+  });
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
 }

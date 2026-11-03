@@ -259,6 +259,38 @@ def _pick_recommended(options: list[dict[str, Any]], limit: int, prefer: str | N
     return min(range(len(options)), key=lambda i: (options[i]["total_cost"], i))
 
 
+_WORD = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
+LOGISTICS = {"transit", "stay"}
+
+
+def _trim_to_budget(days: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    """Remove the priciest activities until the plan fits `limit`; keep at least one real stop each day.
+
+    Returns what was removed, so the traveller can see it instead of it vanishing silently.
+    """
+    trimmed: list[dict[str, Any]] = []
+    spend = sum(a["cost"] for d in days for a in d["activities"])
+    while spend > limit:
+        candidates = [
+            (a["cost"], d, a) for d in days for a in d["activities"]
+            if a["cost"] > 0 and a["category"] not in LOGISTICS
+            and sum(1 for x in d["activities"] if x["category"] not in LOGISTICS) > 1
+        ]
+        if not candidates:
+            break
+        cost, day, activity = max(candidates, key=lambda c: c[0])
+        day["activities"].remove(activity)
+        day["total_cost"] -= cost
+        spend -= cost
+        trimmed.append({"day": day["day"], "title": activity["title"], "cost": cost})
+    return trimmed
+
+
+def _mentions_trimmed(text: str, trimmed: list[dict[str, Any]]) -> bool:
+    words = {w.lower() for w in _WORD.findall(text)}
+    return any(len(words & {w.lower() for w in _WORD.findall(t["title"])}) >= 2 for t in trimmed)
+
+
 def normalize_plan(raw: dict[str, Any], req: PlanRequest, budget: BudgetPlan, *, model: str, demo_mode: bool,
                    generation_ms: int) -> dict[str, Any]:
     """Turn the model's raw plan into a contract-valid Trip dict. Raises PlannerError(invalid_output)."""
@@ -360,7 +392,15 @@ def normalize_plan(raw: dict[str, Any], req: PlanRequest, budget: BudgetPlan, *,
                 highlights.append(activity["title"])
     vibe = _enum(ov.get("vibe"), VIBES, {}, MOOD_VIBE.get(req.mood, "balanced"))
 
+    # A custom budget is the traveller's limit, so hold the plan to it whatever the model returned.
+    trimmed: list[dict[str, Any]] = []
+    if budget.tier == "custom":
+        fixed = next((s["total_cost"] for s in stays if s["recommended"]), 0) + next((t["total_cost"] for t in transport if t["recommended"]), 0)
+        trimmed = _trim_to_budget(days, budget.total - fixed)
+        highlights = [h for h in highlights if not _mentions_trimmed(h, trimmed)]
+
     tips = [t for t in (_text(x, 300) for x in _list(raw.get("tips"))) if t][:6]
+    packing = [] if hours_mode else [p for p in (_text(x, 60) for x in _list(raw.get("packing"))) if p][:10]
 
     trip = {
         "id": uuid.uuid4().hex[:12],
@@ -368,12 +408,13 @@ def normalize_plan(raw: dict[str, Any], req: PlanRequest, budget: BudgetPlan, *,
         "request": req.model_dump(mode="json"),
         "meta": {"model": model, "demo": demo_mode, "currency": "INR", "generation_ms": int(generation_ms)},
         "overview": {"title": title, "summary": summary, "highlights": highlights, "vibe": vibe},
-        "budget": summarize_budget(budget, stays, transport, days),
+        "budget": {**summarize_budget(budget, stays, transport, days), "trimmed": trimmed},
         "stays": stays,
         "transport_scope": scope,
         "transport": transport,
         "days": days,
         "tips": tips,
+        "packing": packing,
     }
     try:
         return Trip.model_validate(trip).model_dump(mode="json")

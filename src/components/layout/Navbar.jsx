@@ -9,6 +9,9 @@ import { useTheme } from '../../hooks/useTheme';
 import { useSavedTrips, useScrolledPast } from '../home/hooks';
 import { cx, spring } from '../../lib/ui';
 
+/** Pages that open on a full-bleed photo, where the bar's text turns white until it scrolls. */
+const PHOTO_HEADER_ROUTES = ['/', '/plan', '/explore', '/stays', '/trips', '/about'];
+
 const LINKS = [
   { to: '/plan', label: 'Plan' },
   { to: '/explore', label: 'Explore' },
@@ -60,11 +63,12 @@ export default function Navbar() {
   }, [menuOpen]);
 
   const solid = scrolled || menuOpen;
+  const onPhoto = !solid && PHOTO_HEADER_ROUTES.includes(location.pathname);
 
   return (
     <header ref={headerRef} className="fixed inset-x-0 top-0 z-[100] no-print">
       <div
-        className={cx('relative transition-[background-color,border-color,backdrop-filter] duration-300', solid ? 'material' : 'bg-transparent')}
+        className={cx('relative transition-[background-color,border-color,backdrop-filter] duration-300', solid ? 'material' : 'bg-transparent', onPhoto && 'nav-on-photo')}
         style={{ borderBottom: `1px solid ${solid && !menuOpen ? 'var(--separator)' : 'transparent'}` }}
       >
         <nav aria-label="Main" className="container-x flex items-center justify-between gap-4" style={{ height: 'var(--nav-height)' }}>

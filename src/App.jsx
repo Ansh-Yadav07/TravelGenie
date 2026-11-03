@@ -7,6 +7,7 @@ import { Spinner } from './components/ui';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
+import { getHealth } from './lib/api';
 
 const Plan = lazy(() => import('./pages/Plan'));
 const TripResult = lazy(() => import('./pages/TripResult'));
@@ -69,6 +70,9 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  // Wake a sleeping backend early, so the first plan doesn't wait for a cold start.
+  useEffect(() => { getHealth().catch(() => {}); }, []);
+
   return (
     <ThemeProvider>
       <ToastProvider>
