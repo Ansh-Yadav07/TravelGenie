@@ -41,7 +41,7 @@ Other scripts: `npm run lint`, `npm run build`, `npm run api:test`.
 Deploy the two parts separately:
 
 1. **Backend** (Render / Railway): root directory `TravelGenieAI`, start command `uvicorn main:app --host 0.0.0.0 --port $PORT`. Set `GEMINI_API_KEY`, and set `ALLOWED_ORIGINS` to your frontend URL.
-2. **Frontend** (Vercel / Netlify): build `npm run build`, output `dist`. Set `VITE_API_URL` to the backend URL (e.g. `https://travelgenie-api.onrender.com`). Add a SPA rewrite so routes like `/trip/:id` serve `index.html`.
+2. **Frontend** (Vercel / Netlify): build `npm run build`, output `dist`. Set `VITE_API_URL` to the backend URL (e.g. `https://travelgenie-api.onrender.com`). `VITE_API_URL` is read at build time, so redeploy after changing it. On Vercel, `vercel.json` makes routes like `/trip/:id` serve `index.html`; other hosts need an equivalent SPA rewrite.
 
 ## Team
 - Ansh Yadav
